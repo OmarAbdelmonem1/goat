@@ -1,0 +1,93 @@
+// ENUMS
+enum DepartmentType {
+  EMPLOYEE,
+  HR
+}
+
+enum Status {
+  PENDING,
+  APPROVED,
+  REJECTED
+}
+
+enum VacationType {
+  ANNUAL,
+  SICK
+}
+
+// CORE ENTITIES
+entity Employee {
+  name String required maxlength(100)
+  email String required unique maxlength(254) pattern(/^[^@\s]+@[^@\s]+\.[^@\s]+$/)
+  userRole DepartmentType required
+  createdAt Instant required
+  vacationBalance Integer required min(0)
+}
+
+entity MeetingRoom {
+  name String required maxlength(100)
+  capacity Integer required min(1) max(500)
+  requiresApproval Boolean required
+}
+
+entity Equipment {
+  name String required unique maxlength(100)
+  description String maxlength(500)
+  isAvailable Boolean
+}
+
+entity BookingRequest {
+  startTime Instant required
+  endTime Instant required
+  status Status required
+  createdAt Instant required
+  updatedAt Instant
+  purpose String maxlength(500)
+}
+
+entity VacationRequest {
+  startDate LocalDate required
+  endDate LocalDate required
+  type VacationType required
+  reason TextBlob
+  status Status required
+  createdAt Instant
+  updatedAt Instant
+}
+
+entity Attachment {
+  name String required maxlength(255)
+  url String required maxlength(2048)
+  fileSize Long min(0)
+  contentType String maxlength(100)
+  uploadedAt Instant
+}
+
+// RELATIONSHIPS
+relationship ManyToMany {
+  MeetingRoom{equipment} to Equipment{meetingRooms}
+}
+
+relationship OneToMany {
+  Employee{bookingRequests} to BookingRequest{employee required}
+  MeetingRoom{bookingRequests} to BookingRequest{meetingRoom required}
+  Employee{vacationRequests} to VacationRequest{employee required}
+  VacationRequest{attachments} to Attachment{vacationRequest}
+}
+
+// Many-to-many relationship for booking invitations
+relationship ManyToMany {
+  BookingRequest{invitedUsers} to Employee{invitations}
+}
+
+// One-to-one relationship with built-in User entity
+relationship OneToOne {
+Employee{user} to User with builtInEntity
+}
+
+// Configuration
+paginate Employee, BookingRequest, VacationRequest with pagination
+paginate MeetingRoom, Equipment, Attachment with infinite-scroll
+service all with serviceClass
+dto all with mapstruct
+filter Employee, BookingRequest, VacationRequest, MeetingRoom

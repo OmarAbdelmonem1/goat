@@ -1,0 +1,38 @@
+{
+  "annotations": {
+    "changelogDate": "20250811135912"
+  },
+  "applications": "*",
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "name",
+      "fieldType": "String",
+      "fieldValidateRules": ["required", "unique", "maxlength"],
+      "fieldValidateRulesMaxlength": "100"
+    },
+    {
+      "fieldName": "description",
+      "fieldType": "String",
+      "fieldValidateRules": ["maxlength"],
+      "fieldValidateRulesMaxlength": "500"
+    },
+    {
+      "fieldName": "isAvailable",
+      "fieldType": "Boolean"
+    }
+  ],
+  "name": "Equipment",
+  "pagination": "infinite-scroll",
+  "relationships": [
+    {
+      "otherEntityName": "meetingRoom",
+      "otherEntityRelationshipName": "equipment",
+      "relationshipName": "meetingRooms",
+      "relationshipSide": "right",
+      "relationshipType": "many-to-many"
+    }
+  ],
+  "searchEngine": "no",
+  "service": "serviceClass"
+}

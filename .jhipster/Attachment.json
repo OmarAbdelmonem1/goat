@@ -1,0 +1,50 @@
+{
+  "annotations": {
+    "changelogDate": "20250811135915"
+  },
+  "applications": "*",
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "name",
+      "fieldType": "String",
+      "fieldValidateRules": ["required", "maxlength"],
+      "fieldValidateRulesMaxlength": "255"
+    },
+    {
+      "fieldName": "url",
+      "fieldType": "String",
+      "fieldValidateRules": ["required", "maxlength"],
+      "fieldValidateRulesMaxlength": "2048"
+    },
+    {
+      "fieldName": "fileSize",
+      "fieldType": "Long",
+      "fieldValidateRules": ["min"],
+      "fieldValidateRulesMin": "0"
+    },
+    {
+      "fieldName": "contentType",
+      "fieldType": "String",
+      "fieldValidateRules": ["maxlength"],
+      "fieldValidateRulesMaxlength": "100"
+    },
+    {
+      "fieldName": "uploadedAt",
+      "fieldType": "Instant"
+    }
+  ],
+  "name": "Attachment",
+  "pagination": "infinite-scroll",
+  "relationships": [
+    {
+      "otherEntityName": "vacationRequest",
+      "otherEntityRelationshipName": "attachments",
+      "relationshipName": "vacationRequest",
+      "relationshipSide": "right",
+      "relationshipType": "many-to-one"
+    }
+  ],
+  "searchEngine": "no",
+  "service": "serviceClass"
+}

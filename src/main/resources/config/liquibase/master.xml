@@ -12,7 +12,18 @@
     <property name="timeType" value="time(6)" dbms="mariadb"/>
 
     <include file="config/liquibase/changelog/00000000000000_initial_schema.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20250811135910_added_entity_Employee.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20250811135911_added_entity_MeetingRoom.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20250811135912_added_entity_Equipment.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20250811135913_added_entity_BookingRequest.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20250811135914_added_entity_VacationRequest.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20250811135915_added_entity_Attachment.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-changelog - JHipster will add liquibase changelogs here -->
+    <include file="config/liquibase/changelog/20250811135910_added_entity_constraints_Employee.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20250811135911_added_entity_constraints_MeetingRoom.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20250811135913_added_entity_constraints_BookingRequest.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20250811135914_added_entity_constraints_VacationRequest.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20250811135915_added_entity_constraints_Attachment.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-constraints-changelog - JHipster will add liquibase constraints changelogs here -->
     <!-- jhipster-needle-liquibase-add-incremental-changelog - JHipster will add incremental liquibase changelogs here -->
 </databaseChangeLog>

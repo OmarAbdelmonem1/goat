@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+    <!--
+        Added the constraints for entity BookingRequest.
+    -->
+    <changeSet id="20250811135913-2" author="jhipster">
+
+        <addForeignKeyConstraint baseColumnNames="booking_request_id"
+                                 baseTableName="rel_booking_request__invited_users"
+                                 constraintName="fk_rel_booking_request__invited_users__booking_request_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="booking_request"
+                                 />
+
+        <addForeignKeyConstraint baseColumnNames="invited_users_id"
+                                 baseTableName="rel_booking_request__invited_users"
+                                 constraintName="fk_rel_booking_request__invited_users__invited_users_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="employee"
+                                 />
+
+        <addForeignKeyConstraint baseColumnNames="employee_id"
+                                 baseTableName="booking_request"
+                                 constraintName="fk_booking_request__employee_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="employee"
+                                 />
+
+        <addForeignKeyConstraint baseColumnNames="meeting_room_id"
+                                 baseTableName="booking_request"
+                                 constraintName="fk_booking_request__meeting_room_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="meeting_room"
+                                 />
+    </changeSet>
+</databaseChangeLog>

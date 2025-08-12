@@ -1,0 +1,48 @@
+{
+  "annotations": {
+    "changelogDate": "20250811135911"
+  },
+  "applications": "*",
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "name",
+      "fieldType": "String",
+      "fieldValidateRules": ["required", "maxlength"],
+      "fieldValidateRulesMaxlength": "100"
+    },
+    {
+      "fieldName": "capacity",
+      "fieldType": "Integer",
+      "fieldValidateRules": ["required", "min", "max"],
+      "fieldValidateRulesMax": "500",
+      "fieldValidateRulesMin": "1"
+    },
+    {
+      "fieldName": "requiresApproval",
+      "fieldType": "Boolean",
+      "fieldValidateRules": ["required"]
+    }
+  ],
+  "jpaMetamodelFiltering": true,
+  "name": "MeetingRoom",
+  "pagination": "infinite-scroll",
+  "relationships": [
+    {
+      "otherEntityName": "bookingRequest",
+      "otherEntityRelationshipName": "meetingRoom",
+      "relationshipName": "bookingRequests",
+      "relationshipSide": "left",
+      "relationshipType": "one-to-many"
+    },
+    {
+      "otherEntityName": "equipment",
+      "otherEntityRelationshipName": "meetingRooms",
+      "relationshipName": "equipment",
+      "relationshipSide": "left",
+      "relationshipType": "many-to-many"
+    }
+  ],
+  "searchEngine": "no",
+  "service": "serviceClass"
+}
