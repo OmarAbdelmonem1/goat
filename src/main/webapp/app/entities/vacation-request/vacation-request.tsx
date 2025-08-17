@@ -4,6 +4,7 @@ import { Button, Table } from 'reactstrap';
 import { JhiItemCount, JhiPagination, TextFormat, getPaginationState } from 'react-jhipster';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSort, faSortDown, faSortUp } from '@fortawesome/free-solid-svg-icons';
+
 import { APP_DATE_FORMAT } from 'app/config/constants';
 import { ASC, DESC, ITEMS_PER_PAGE, SORT } from 'app/shared/util/pagination.constants';
 import { overridePaginationStateWithQueryParams } from 'app/shared/util/entity-utils';
@@ -13,18 +14,33 @@ import { getEntities, updateEntity } from './vacation-request.reducer';
 
 export const VacationRequest = () => {
   const dispatch = useAppDispatch();
-
   const pageLocation = useLocation();
   const navigate = useNavigate();
 
   const [paginationState, setPaginationState] = useState(
     overridePaginationStateWithQueryParams(getPaginationState(pageLocation, ITEMS_PER_PAGE, 'id'), pageLocation.search),
   );
+  const getStatusColor = status => {
+    switch (status) {
+      case 'APPROVED':
+        return 'success';
+      case 'REJECTED':
+        return 'danger';
+      case 'PENDING':
+        return 'warning';
+      default:
+        return 'secondary';
+    }
+  };
 
   const vacationRequestList = useAppSelector(state => state.vacationRequest.entities);
   const loading = useAppSelector(state => state.vacationRequest.loading);
   const totalItems = useAppSelector(state => state.vacationRequest.totalItems);
   const updating = useAppSelector(state => state.vacationRequest.updating);
+
+  //  Get user authorities
+  const account = useAppSelector(state => state.authentication.account);
+  const isAdmin = account?.authorities?.includes('ROLE_ADMIN');
 
   const getAllEntities = () => {
     dispatch(
@@ -80,6 +96,7 @@ export const VacationRequest = () => {
   const handleSyncList = () => {
     sortEntities();
   };
+
   const getSortIconByFieldName = (fieldName: string) => {
     const sortFieldName = paginationState.sort;
     const order = paginationState.order;
@@ -89,6 +106,7 @@ export const VacationRequest = () => {
     return order === ASC ? faSortUp : faSortDown;
   };
 
+  // ✅ Approval handlers
   const handleAccept = vacationRequest => {
     const updatedVacationRequest = {
       ...vacationRequest,
@@ -97,6 +115,7 @@ export const VacationRequest = () => {
     };
     dispatch(updateEntity(updatedVacationRequest));
   };
+
   const handleReject = vacationRequest => {
     const updatedVacationRequest = {
       ...vacationRequest,
@@ -105,19 +124,10 @@ export const VacationRequest = () => {
     };
     dispatch(updateEntity(updatedVacationRequest));
   };
-  const getStatusColor = status => {
-    switch (status) {
-      case 'APPROVED':
-        return 'success';
-      case 'REJECTED':
-        return 'danger';
-      case 'PENDING':
-        return 'warning';
-      default:
-        return 'secondary';
-    }
-  };
-  const canModifyStatus = status => ['PENDING', 'APPROVED', 'REJECTED'].includes(status);
+
+  // ✅ Only allow status modification when pending
+  const canModifyStatus = status => status === 'PENDING';
+
   return (
     <div>
       <h2 id="vacation-request-heading" data-cy="VacationRequestHeading">
@@ -152,13 +162,13 @@ export const VacationRequest = () => {
                 <th className="hand" onClick={sort('reason')}>
                   Reason <FontAwesomeIcon icon={getSortIconByFieldName('reason')} />
                 </th>
-                <th className="hand" onClick={sort('requestedBy')}>
-                  Requested By <FontAwesomeIcon icon={getSortIconByFieldName('requestedBy')} />
+                <th className="hand" onClick={sort('employee')}>
+                  Employee <FontAwesomeIcon icon={getSortIconByFieldName('employee')} />
                 </th>
                 <th className="hand" onClick={sort('createdAt')}>
                   Created At <FontAwesomeIcon icon={getSortIconByFieldName('createdAt')} />
                 </th>
-                <th>Approval Actions</th>
+                {isAdmin && <th>Approval Actions</th>}
                 <th>Management</th>
               </tr>
             </thead>
@@ -178,7 +188,7 @@ export const VacationRequest = () => {
                   <td>
                     {vacationRequest.endDate ? <TextFormat type="date" value={vacationRequest.endDate} format={APP_DATE_FORMAT} /> : null}
                   </td>
-                  <td>{vacationRequest.status}</td>
+                  <span className={`badge bg-${getStatusColor(vacationRequest.status)}`}>{vacationRequest.status}</span>
                   <td>{vacationRequest.reason}</td>
                   <td>
                     {vacationRequest.employee?.id ? (
@@ -187,28 +197,29 @@ export const VacationRequest = () => {
                       ''
                     )}
                   </td>
-
                   <td>
                     {vacationRequest.createdAt ? (
                       <TextFormat type="date" value={vacationRequest.createdAt} format={APP_DATE_FORMAT} />
                     ) : null}
                   </td>
-                  {/* Approval Actions */}
-                  <td>
-                    {canModifyStatus(vacationRequest.status) ? (
-                      <div className="btn-group">
-                        <Button color="success" size="sm" onClick={() => handleAccept(vacationRequest)} disabled={updating}>
-                          <FontAwesomeIcon icon="check" /> Accept
-                        </Button>
-                        <Button color="danger" size="sm" onClick={() => handleReject(vacationRequest)} disabled={updating}>
-                          <FontAwesomeIcon icon="times" /> Reject
-                        </Button>
-                      </div>
-                    ) : (
-                      <span className="text-muted">No actions</span>
-                    )}
-                  </td>
-                  {/* Management */}
+                  {/* ✅ Approval Actions (Admins only) */}
+                  {isAdmin && (
+                    <td>
+                      {canModifyStatus(vacationRequest.status) ? (
+                        <div className="btn-group">
+                          <Button color="success" size="sm" onClick={() => handleAccept(vacationRequest)} disabled={updating}>
+                            <FontAwesomeIcon icon="check" /> Accept
+                          </Button>
+                          <Button color="danger" size="sm" onClick={() => handleReject(vacationRequest)} disabled={updating}>
+                            <FontAwesomeIcon icon="times" /> Reject
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-muted">No actions</span>
+                      )}
+                    </td>
+                  )}
+                  {/* ✅ Management buttons */}
                   <td className="text-end">
                     <div className="btn-group flex-btn-group-container">
                       <Button tag={Link} to={`/vacation-request/${vacationRequest.id}`} color="info" size="sm">

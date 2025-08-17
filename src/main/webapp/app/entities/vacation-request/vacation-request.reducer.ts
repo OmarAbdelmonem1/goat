@@ -14,7 +14,7 @@ const initialState: EntityState<IVacationRequest> = {
   updateSuccess: false,
 };
 
-const apiUrl = 'api/vacation-requests';
+const apiUrl = 'api/v1/vacation-requests';
 
 // Actions
 
@@ -32,6 +32,15 @@ export const getEntity = createAsyncThunk(
   async (id: string | number) => {
     const requestUrl = `${apiUrl}/${id}`;
     return axios.get<IVacationRequest>(requestUrl);
+  },
+  { serializeError: serializeAxiosError },
+);
+// New action: fetch vacation requests of current logged-in user
+export const getMyVacationRequests = createAsyncThunk(
+  'vacationRequest/fetch_my_entity_list',
+  async () => {
+    const requestUrl = `api/v1/vacation-requests/my`;
+    return axios.get<IVacationRequest[]>(requestUrl);
   },
   { serializeError: serializeAxiosError },
 );
@@ -118,6 +127,15 @@ export const VacationRequestSlice = createEntitySlice({
         state.errorMessage = null;
         state.updateSuccess = false;
         state.updating = true;
+      })
+      .addMatcher(isFulfilled(getEntities, getMyVacationRequests), (state, action) => {
+        const { data, headers } = action.payload;
+        return {
+          ...state,
+          loading: false,
+          entities: data,
+          totalItems: headers?.['x-total-count'] ? parseInt(headers['x-total-count'], 10) : data.length,
+        };
       });
   },
 });

@@ -9,7 +9,7 @@ import { ASC, DESC, ITEMS_PER_PAGE, SORT } from 'app/shared/util/pagination.cons
 import { overridePaginationStateWithQueryParams } from 'app/shared/util/entity-utils';
 import { useAppDispatch, useAppSelector } from 'app/config/store';
 
-import { getEntities, updateEntity } from './booking-request.reducer';
+import { getEntities, getMyEntities, updateEntity } from './booking-request.reducer';
 
 export const BookingRequest = () => {
   const dispatch = useAppDispatch();
@@ -26,14 +26,21 @@ export const BookingRequest = () => {
   const totalItems = useAppSelector(state => state.bookingRequest.totalItems);
   const updating = useAppSelector(state => state.bookingRequest.updating);
 
+  const account = useAppSelector(state => state.authentication.account);
+  const isAdmin = account?.authorities?.includes('ROLE_ADMIN');
+
+  // 🔹 getAllEntities يختار API حسب الدور
   const getAllEntities = () => {
-    dispatch(
-      getEntities({
-        page: paginationState.activePage - 1,
-        size: paginationState.itemsPerPage,
-        sort: `${paginationState.sort},${paginationState.order}`,
-      }),
-    );
+    const queryParams = {
+      page: paginationState.activePage - 1,
+      size: paginationState.itemsPerPage,
+      sort: `${paginationState.sort},${paginationState.order}`,
+    };
+    if (isAdmin) {
+      dispatch(getEntities(queryParams));
+    } else {
+      dispatch(getMyEntities(queryParams));
+    }
   };
 
   const sortEntities = () => {
@@ -46,7 +53,7 @@ export const BookingRequest = () => {
 
   useEffect(() => {
     sortEntities();
-  }, [paginationState.activePage, paginationState.order, paginationState.sort]);
+  }, [paginationState.activePage, paginationState.order, paginationState.sort, isAdmin]);
 
   useEffect(() => {
     const params = new URLSearchParams(pageLocation.search);
@@ -90,6 +97,7 @@ export const BookingRequest = () => {
     return order === ASC ? faSortUp : faSortDown;
   };
 
+  // 🔹 Admin actions
   const handleAccept = bookingRequest => {
     const updatedBookingRequest = {
       ...bookingRequest,
@@ -121,9 +129,7 @@ export const BookingRequest = () => {
     }
   };
 
-  const canModifyStatus = status => {
-    return status === 'PENDING';
-  };
+  const canModifyStatus = status => status === 'PENDING';
 
   return (
     <div>
@@ -139,6 +145,7 @@ export const BookingRequest = () => {
           </Link>
         </div>
       </h2>
+
       <div className="table-responsive">
         {bookingRequestList && bookingRequestList.length > 0 ? (
           <Table responsive>
@@ -162,14 +169,10 @@ export const BookingRequest = () => {
                 <th className="hand" onClick={sort('purpose')}>
                   Purpose <FontAwesomeIcon icon={getSortIconByFieldName('purpose')} />
                 </th>
-                <th>
-                  Employee <FontAwesomeIcon icon="sort" />
-                </th>
-                <th>
-                  Meeting Room <FontAwesomeIcon icon="sort" />
-                </th>
-                <th>Actions</th>
-                <th />
+                <th>Employee</th>
+                <th>Meeting Room</th>
+                {isAdmin && <th>Actions</th>}
+                {isAdmin && <th />}
               </tr>
             </thead>
             <tbody>
@@ -207,53 +210,43 @@ export const BookingRequest = () => {
                       ''
                     )}
                   </td>
-                  <td>
-                    {canModifyStatus(bookingRequest.status) ? (
-                      <div className="btn-group">
-                        <Button
-                          color="success"
-                          size="sm"
-                          onClick={() => handleAccept(bookingRequest)}
-                          disabled={updating}
-                          data-cy="acceptButton"
-                        >
-                          <FontAwesomeIcon icon="check" /> Accept
-                        </Button>
-                        <Button
-                          color="danger"
-                          size="sm"
-                          onClick={() => handleReject(bookingRequest)}
-                          disabled={updating}
-                          data-cy="rejectButton"
-                        >
-                          <FontAwesomeIcon icon="times" /> Reject
-                        </Button>
-                      </div>
-                    ) : (
-                      <span className="text-muted">No actions available</span>
-                    )}
-                  </td>
+                  {isAdmin && (
+                    <td>
+                      {canModifyStatus(bookingRequest.status) ? (
+                        <div className="btn-group">
+                          <Button color="success" size="sm" onClick={() => handleAccept(bookingRequest)} disabled={updating}>
+                            <FontAwesomeIcon icon="check" /> Accept
+                          </Button>
+                          <Button color="danger" size="sm" onClick={() => handleReject(bookingRequest)} disabled={updating}>
+                            <FontAwesomeIcon icon="times" /> Reject
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-muted">No actions available</span>
+                      )}
+                    </td>
+                  )}
                   <td className="text-end">
                     <div className="btn-group flex-btn-group-container">
-                      <Button tag={Link} to={`/booking-request/${bookingRequest.id}`} color="info" size="sm" data-cy="entityDetailsButton">
+                      <Button tag={Link} to={`/booking-request/${bookingRequest.id}`} color="info" size="sm">
                         <FontAwesomeIcon icon="eye" /> <span className="d-none d-md-inline">View</span>
                       </Button>
+
                       <Button
                         tag={Link}
                         to={`/booking-request/${bookingRequest.id}/edit?page=${paginationState.activePage}&sort=${paginationState.sort},${paginationState.order}`}
                         color="primary"
                         size="sm"
-                        data-cy="entityEditButton"
                       >
                         <FontAwesomeIcon icon="pencil-alt" /> <span className="d-none d-md-inline">Edit</span>
                       </Button>
+
                       <Button
                         onClick={() =>
                           (window.location.href = `/booking-request/${bookingRequest.id}/delete?page=${paginationState.activePage}&sort=${paginationState.sort},${paginationState.order}`)
                         }
                         color="danger"
                         size="sm"
-                        data-cy="entityDeleteButton"
                       >
                         <FontAwesomeIcon icon="trash" /> <span className="d-none d-md-inline">Delete</span>
                       </Button>
@@ -288,4 +281,5 @@ export const BookingRequest = () => {
     </div>
   );
 };
+
 export default BookingRequest;

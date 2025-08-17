@@ -14,10 +14,11 @@ const initialState: EntityState<IBookingRequest> = {
   updateSuccess: false,
 };
 
-const apiUrl = 'api/booking-requests';
+const apiUrl = 'api/v1/booking-requests';
 
 // Actions
 
+// ✅ Fixed Actions
 export const getEntities = createAsyncThunk(
   'bookingRequest/fetch_entity_list',
   async ({ page, size, sort }: IQueryParams) => {
@@ -25,6 +26,16 @@ export const getEntities = createAsyncThunk(
     return axios.get<IBookingRequest[]>(requestUrl);
   },
   { serializeError: serializeAxiosError },
+);
+
+// ✅ Fixed getMyEntities - Added serializeError
+export const getMyEntities = createAsyncThunk(
+  'bookingRequest/fetch_my_entity_list',
+  async ({ page, size, sort }: IQueryParams = {}) => {
+    const requestUrl = `${apiUrl}/my?page=${page}&size=${size}&sort=${sort}&cacheBuster=${new Date().getTime()}`;
+    return axios.get<IBookingRequest[]>(requestUrl);
+  },
+  { serializeError: serializeAxiosError }, // ⚠️ Was missing
 );
 
 export const getEntity = createAsyncThunk(
@@ -40,7 +51,17 @@ export const createEntity = createAsyncThunk(
   'bookingRequest/create_entity',
   async (entity: IBookingRequest, thunkAPI) => {
     const result = await axios.post<IBookingRequest>(apiUrl, cleanEntity(entity));
-    thunkAPI.dispatch(getEntities({}));
+
+    // ✅ Fixed: Check if user is admin to decide which action to dispatch
+    const state = thunkAPI.getState() as any;
+    const isAdmin = state.authentication?.account?.authorities?.includes('ROLE_ADMIN');
+
+    if (isAdmin) {
+      thunkAPI.dispatch(getEntities({}));
+    } else {
+      thunkAPI.dispatch(getMyEntities({}));
+    }
+
     return result;
   },
   { serializeError: serializeAxiosError },
@@ -50,7 +71,17 @@ export const updateEntity = createAsyncThunk(
   'bookingRequest/update_entity',
   async (entity: IBookingRequest, thunkAPI) => {
     const result = await axios.put<IBookingRequest>(`${apiUrl}/${entity.id}`, cleanEntity(entity));
-    thunkAPI.dispatch(getEntities({}));
+
+    // ✅ Fixed: Check if user is admin to decide which action to dispatch
+    const state = thunkAPI.getState() as any;
+    const isAdmin = state.authentication?.account?.authorities?.includes('ROLE_ADMIN');
+
+    if (isAdmin) {
+      thunkAPI.dispatch(getEntities({}));
+    } else {
+      thunkAPI.dispatch(getMyEntities({}));
+    }
+
     return result;
   },
   { serializeError: serializeAxiosError },
@@ -60,7 +91,17 @@ export const partialUpdateEntity = createAsyncThunk(
   'bookingRequest/partial_update_entity',
   async (entity: IBookingRequest, thunkAPI) => {
     const result = await axios.patch<IBookingRequest>(`${apiUrl}/${entity.id}`, cleanEntity(entity));
-    thunkAPI.dispatch(getEntities({}));
+
+    // ✅ Fixed: Check if user is admin to decide which action to dispatch
+    const state = thunkAPI.getState() as any;
+    const isAdmin = state.authentication?.account?.authorities?.includes('ROLE_ADMIN');
+
+    if (isAdmin) {
+      thunkAPI.dispatch(getEntities({}));
+    } else {
+      thunkAPI.dispatch(getMyEntities({}));
+    }
+
     return result;
   },
   { serializeError: serializeAxiosError },
@@ -71,7 +112,17 @@ export const deleteEntity = createAsyncThunk(
   async (id: string | number, thunkAPI) => {
     const requestUrl = `${apiUrl}/${id}`;
     const result = await axios.delete<IBookingRequest>(requestUrl);
-    thunkAPI.dispatch(getEntities({}));
+
+    // ✅ Fixed: Check if user is admin to decide which action to dispatch
+    const state = thunkAPI.getState() as any;
+    const isAdmin = state.authentication?.account?.authorities?.includes('ROLE_ADMIN');
+
+    if (isAdmin) {
+      thunkAPI.dispatch(getEntities({}));
+    } else {
+      thunkAPI.dispatch(getMyEntities({}));
+    }
+
     return result;
   },
   { serializeError: serializeAxiosError },
@@ -93,7 +144,8 @@ export const BookingRequestSlice = createEntitySlice({
         state.updateSuccess = true;
         state.entity = {};
       })
-      .addMatcher(isFulfilled(getEntities), (state, action) => {
+      // ✅ FIXED: Include both getEntities AND getMyEntities in the matcher
+      .addMatcher(isFulfilled(getEntities, getMyEntities), (state, action) => {
         const { data, headers } = action.payload;
 
         return {
@@ -109,7 +161,8 @@ export const BookingRequestSlice = createEntitySlice({
         state.updateSuccess = true;
         state.entity = action.payload.data;
       })
-      .addMatcher(isPending(getEntities, getEntity), state => {
+      // ✅ FIXED: Include both getEntities AND getMyEntities in the pending matcher
+      .addMatcher(isPending(getEntities, getMyEntities, getEntity), state => {
         state.errorMessage = null;
         state.updateSuccess = false;
         state.loading = true;

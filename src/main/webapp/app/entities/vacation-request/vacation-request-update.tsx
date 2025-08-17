@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button, Col, Row } from 'reactstrap';
 import { ValidatedField, ValidatedForm } from 'react-jhipster';
@@ -25,6 +25,8 @@ export const VacationRequestUpdate = () => {
   const updateSuccess = useAppSelector(state => state.vacationRequest.updateSuccess);
   const vacationTypeValues = Object.keys(VacationType);
 
+  const [attachments, setAttachments] = useState([]);
+
   const handleClose = () => {
     navigate(`/vacation-request${location.search}`);
   };
@@ -39,37 +41,43 @@ export const VacationRequestUpdate = () => {
   }, []);
 
   useEffect(() => {
+    if (!isNew && vacationRequestEntity?.attachments) {
+      setAttachments(vacationRequestEntity.attachments);
+    }
+  }, [vacationRequestEntity]);
+
+  useEffect(() => {
     if (updateSuccess) {
       handleClose();
     }
   }, [updateSuccess]);
 
+  const addAttachment = () => {
+    setAttachments([...attachments, { name: '', url: '', fileSize: 0, contentType: '', uploadedAt: displayDefaultDateTime() }]);
+  };
+
+  const removeAttachment = index => {
+    setAttachments(attachments.filter((_, i) => i !== index));
+  };
+
+  const handleAttachmentChange = (index, field, value) => {
+    const updated = [...attachments];
+    updated[index][field] = value;
+    setAttachments(updated);
+  };
+
   const saveEntity = values => {
-    if (values.id !== undefined && typeof values.id !== 'number') {
-      values.id = Number(values.id);
-    }
-    values.createdAt = convertDateTimeToServer(values.createdAt);
-    values.updatedAt = convertDateTimeToServer(values.updatedAt);
-
-    if (values.attachmentUploadedAt) {
-      values.attachmentUploadedAt = convertDateTimeToServer(values.attachmentUploadedAt);
-    }
-
     const entity = {
       ...vacationRequestEntity,
       ...values,
-      status: 'PENDING', // Always set default
-      employee: employees.find(it => it.login === account.login), // Match logged-in user
-      attachments: [
-        {
-          id: values.attachmentId,
-          name: values.attachmentName,
-          url: values.attachmentUrl,
-          fileSize: values.attachmentFileSize,
-          contentType: values.attachmentContentType,
-          uploadedAt: values.attachmentUploadedAt,
-        },
-      ],
+      status: 'PENDING',
+      employee: employees.find(it => it.login === account.login),
+      attachments: attachments.map(att => ({
+        ...att,
+        uploadedAt: att.uploadedAt ? convertDateTimeToServer(att.uploadedAt) : displayDefaultDateTime(),
+      })),
+      createdAt: convertDateTimeToServer(values.createdAt),
+      updatedAt: convertDateTimeToServer(values.updatedAt),
     };
 
     if (isNew) {
@@ -84,9 +92,9 @@ export const VacationRequestUpdate = () => {
       ? {
           createdAt: displayDefaultDateTime(),
           updatedAt: displayDefaultDateTime(),
-          attachmentUploadedAt: displayDefaultDateTime(),
           status: 'PENDING',
           employee: account?.login,
+          attachments: [],
         }
       : {
           type: vacationRequestEntity.type ?? 'ANNUAL',
@@ -95,12 +103,6 @@ export const VacationRequestUpdate = () => {
           createdAt: convertDateTimeFromServer(vacationRequestEntity.createdAt),
           updatedAt: convertDateTimeFromServer(vacationRequestEntity.updatedAt),
           employee: vacationRequestEntity?.employee?.login,
-          attachmentId: vacationRequestEntity?.attachments?.[0]?.id,
-          attachmentName: vacationRequestEntity?.attachments?.[0]?.name,
-          attachmentUrl: vacationRequestEntity?.attachments?.[0]?.url,
-          attachmentFileSize: vacationRequestEntity?.attachments?.[0]?.fileSize,
-          attachmentContentType: vacationRequestEntity?.attachments?.[0]?.contentType,
-          attachmentUploadedAt: convertDateTimeFromServer(vacationRequestEntity?.attachments?.[0]?.uploadedAt),
         };
 
   return (
@@ -154,19 +156,66 @@ export const VacationRequestUpdate = () => {
               <input type="hidden" name="status" value="PENDING" />
               {/* Hidden employee field */}
               <input type="hidden" name="employee" value={account?.login || ''} />
-              <h5 className="mt-4">Attachment</h5>
-              <ValidatedField label="Attachment Name" name="attachmentName" type="text" validate={{ required: true }} />
-              <ValidatedField label="Attachment URL" name="attachmentUrl" type="text" validate={{ required: true }} />
-              <ValidatedField label="File Size" name="attachmentFileSize" type="number" min="0" />
-              <ValidatedField label="Content Type" name="attachmentContentType" type="text" />
-              <ValidatedField label="Uploaded At" name="attachmentUploadedAt" type="datetime-local" placeholder="YYYY-MM-DD HH:mm" />
-              <Button tag={Link} id="cancel-save" to="/vacation-request" replace color="info">
-                <FontAwesomeIcon icon="arrow-left" /> Back
+
+              <h5 className="mt-4">Attachments</h5>
+              {attachments.map((att, index) => (
+                <div key={index} className="attachment-row mb-2 p-2 border rounded">
+                  <ValidatedField
+                    label="Attachment Name"
+                    name={`attachmentName-${index}`}
+                    type="text"
+                    value={att.name}
+                    onChange={e => handleAttachmentChange(index, 'name', e.target.value)}
+                    validate={{ required: true }}
+                  />
+                  <ValidatedField
+                    label="Attachment URL"
+                    name={`attachmentUrl-${index}`}
+                    type="text"
+                    value={att.url}
+                    onChange={e => handleAttachmentChange(index, 'url', e.target.value)}
+                    validate={{ required: true }}
+                  />
+                  <ValidatedField
+                    label="File Size"
+                    name={`attachmentFileSize-${index}`}
+                    type="number"
+                    min="0"
+                    value={att.fileSize}
+                    onChange={e => handleAttachmentChange(index, 'fileSize', e.target.value)}
+                  />
+                  <ValidatedField
+                    label="Content Type"
+                    name={`attachmentContentType-${index}`}
+                    type="text"
+                    value={att.contentType}
+                    onChange={e => handleAttachmentChange(index, 'contentType', e.target.value)}
+                  />
+                  <ValidatedField
+                    label="Uploaded At"
+                    name={`attachmentUploadedAt-${index}`}
+                    type="datetime-local"
+                    value={att.uploadedAt}
+                    onChange={e => handleAttachmentChange(index, 'uploadedAt', e.target.value)}
+                  />
+                  <Button color="danger" type="button" onClick={() => removeAttachment(index)}>
+                    Remove
+                  </Button>
+                </div>
+              ))}
+              <Button color="secondary" type="button" onClick={addAttachment}>
+                Add Attachment
               </Button>
-              &nbsp;
-              <Button color="primary" id="save-entity" type="submit" disabled={updating}>
-                <FontAwesomeIcon icon="save" /> Save
-              </Button>
+
+              <div className="mt-4">
+                <Button tag={Link} id="cancel-save" to="/vacation-request" replace color="info">
+                  <FontAwesomeIcon icon="arrow-left" /> Back
+                </Button>
+                &nbsp;
+                <Button color="primary" id="save-entity" type="submit" disabled={updating}>
+                  <FontAwesomeIcon icon="save" /> Save
+                </Button>
+              </div>
             </ValidatedForm>
           )}
         </Col>

@@ -126,16 +126,16 @@ public class BookingRequestService {
         entity = bookingRequestRepository.save(entity);
 
         // Send confirmation email for auto-approved bookings or pending requests
-        try {
-            if (entity.getStatus() == Status.APPROVED) {
-                sendBookingConfirmationEmail(entity);
-            } else if (entity.getStatus() == Status.PENDING) {
-                sendPendingBookingEmail(entity);
-            }
-        } catch (Exception e) {
-            LOG.error("Failed to send confirmation email for booking {}: {}", entity.getId(), e.getMessage());
-            // Don't throw exception as booking was successful, just log the email error
-        }
+        // try {
+        //     if (entity.getStatus() == Status.APPROVED) {
+        //         sendBookingConfirmationEmail(entity);
+        //     } else if (entity.getStatus() == Status.PENDING) {
+        //         sendPendingBookingEmail(entity);
+        //     }
+        // } catch (Exception e) {
+        //     LOG.error("Failed to send confirmation email for booking {}: {}", entity.getId(), e.getMessage());
+        //     // Don't throw exception as booking was successful, just log the email error
+        // }
 
         return bookingRequestMapper.toDto(entity);
     }

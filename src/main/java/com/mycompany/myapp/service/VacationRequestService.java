@@ -30,10 +30,10 @@ public class VacationRequestService {
 
     private static final Logger LOG = LoggerFactory.getLogger(VacationRequestService.class);
 
-    private final VacationRequestRepository vacationRequestRepository;
+    protected final VacationRequestRepository vacationRequestRepository;
 
-    private final VacationRequestMapper vacationRequestMapper;
-    private final EmployeeRepository employeeRepository;
+    protected final VacationRequestMapper vacationRequestMapper;
+    protected final EmployeeRepository employeeRepository;
     private final EmployeeMapper employeeMapper;
 
     public VacationRequestService(
