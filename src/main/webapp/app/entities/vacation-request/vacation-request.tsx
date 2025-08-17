@@ -4,12 +4,12 @@ import { Button, Table } from 'reactstrap';
 import { JhiItemCount, JhiPagination, TextFormat, getPaginationState } from 'react-jhipster';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSort, faSortDown, faSortUp } from '@fortawesome/free-solid-svg-icons';
-import { APP_DATE_FORMAT, APP_LOCAL_DATE_FORMAT } from 'app/config/constants';
+import { APP_DATE_FORMAT } from 'app/config/constants';
 import { ASC, DESC, ITEMS_PER_PAGE, SORT } from 'app/shared/util/pagination.constants';
 import { overridePaginationStateWithQueryParams } from 'app/shared/util/entity-utils';
 import { useAppDispatch, useAppSelector } from 'app/config/store';
 
-import { getEntities } from './vacation-request.reducer';
+import { getEntities, updateEntity } from './vacation-request.reducer';
 
 export const VacationRequest = () => {
   const dispatch = useAppDispatch();
@@ -24,6 +24,7 @@ export const VacationRequest = () => {
   const vacationRequestList = useAppSelector(state => state.vacationRequest.entities);
   const loading = useAppSelector(state => state.vacationRequest.loading);
   const totalItems = useAppSelector(state => state.vacationRequest.totalItems);
+  const updating = useAppSelector(state => state.vacationRequest.updating);
 
   const getAllEntities = () => {
     dispatch(
@@ -79,7 +80,6 @@ export const VacationRequest = () => {
   const handleSyncList = () => {
     sortEntities();
   };
-
   const getSortIconByFieldName = (fieldName: string) => {
     const sortFieldName = paginationState.sort;
     const order = paginationState.order;
@@ -89,6 +89,35 @@ export const VacationRequest = () => {
     return order === ASC ? faSortUp : faSortDown;
   };
 
+  const handleAccept = vacationRequest => {
+    const updatedVacationRequest = {
+      ...vacationRequest,
+      status: 'APPROVED',
+      updatedAt: new Date().toISOString(),
+    };
+    dispatch(updateEntity(updatedVacationRequest));
+  };
+  const handleReject = vacationRequest => {
+    const updatedVacationRequest = {
+      ...vacationRequest,
+      status: 'REJECTED',
+      updatedAt: new Date().toISOString(),
+    };
+    dispatch(updateEntity(updatedVacationRequest));
+  };
+  const getStatusColor = status => {
+    switch (status) {
+      case 'APPROVED':
+        return 'success';
+      case 'REJECTED':
+        return 'danger';
+      case 'PENDING':
+        return 'warning';
+      default:
+        return 'secondary';
+    }
+  };
+  const canModifyStatus = status => ['PENDING', 'APPROVED', 'REJECTED'].includes(status);
   return (
     <div>
       <h2 id="vacation-request-heading" data-cy="VacationRequestHeading">
@@ -97,7 +126,7 @@ export const VacationRequest = () => {
           <Button className="me-2" color="info" onClick={handleSyncList} disabled={loading}>
             <FontAwesomeIcon icon="sync" spin={loading} /> Refresh list
           </Button>
-          <Link to="/vacation-request/new" className="btn btn-primary jh-create-entity" id="jh-create-entity" data-cy="entityCreateButton">
+          <Link to="/vacation-request/new" className="btn btn-primary jh-create-entity" data-cy="entityCreateButton">
             <FontAwesomeIcon icon="plus" />
             &nbsp; Create a new Vacation Request
           </Link>
@@ -117,25 +146,20 @@ export const VacationRequest = () => {
                 <th className="hand" onClick={sort('endDate')}>
                   End Date <FontAwesomeIcon icon={getSortIconByFieldName('endDate')} />
                 </th>
-                <th className="hand" onClick={sort('type')}>
-                  Type <FontAwesomeIcon icon={getSortIconByFieldName('type')} />
+                <th className="hand" onClick={sort('status')}>
+                  Status <FontAwesomeIcon icon={getSortIconByFieldName('status')} />
                 </th>
                 <th className="hand" onClick={sort('reason')}>
                   Reason <FontAwesomeIcon icon={getSortIconByFieldName('reason')} />
                 </th>
-                <th className="hand" onClick={sort('status')}>
-                  Status <FontAwesomeIcon icon={getSortIconByFieldName('status')} />
+                <th className="hand" onClick={sort('requestedBy')}>
+                  Requested By <FontAwesomeIcon icon={getSortIconByFieldName('requestedBy')} />
                 </th>
                 <th className="hand" onClick={sort('createdAt')}>
                   Created At <FontAwesomeIcon icon={getSortIconByFieldName('createdAt')} />
                 </th>
-                <th className="hand" onClick={sort('updatedAt')}>
-                  Updated At <FontAwesomeIcon icon={getSortIconByFieldName('updatedAt')} />
-                </th>
-                <th>
-                  Employee <FontAwesomeIcon icon="sort" />
-                </th>
-                <th />
+                <th>Approval Actions</th>
+                <th>Management</th>
               </tr>
             </thead>
             <tbody>
@@ -148,53 +172,50 @@ export const VacationRequest = () => {
                   </td>
                   <td>
                     {vacationRequest.startDate ? (
-                      <TextFormat type="date" value={vacationRequest.startDate} format={APP_LOCAL_DATE_FORMAT} />
+                      <TextFormat type="date" value={vacationRequest.startDate} format={APP_DATE_FORMAT} />
                     ) : null}
                   </td>
                   <td>
-                    {vacationRequest.endDate ? (
-                      <TextFormat type="date" value={vacationRequest.endDate} format={APP_LOCAL_DATE_FORMAT} />
-                    ) : null}
+                    {vacationRequest.endDate ? <TextFormat type="date" value={vacationRequest.endDate} format={APP_DATE_FORMAT} /> : null}
                   </td>
-                  <td>{vacationRequest.type}</td>
-                  <td>{vacationRequest.reason}</td>
                   <td>{vacationRequest.status}</td>
+                  <td>{vacationRequest.reason}</td>
                   <td>
-                    {vacationRequest.createdAt ? (
-                      <TextFormat type="date" value={vacationRequest.createdAt} format={APP_DATE_FORMAT} />
-                    ) : null}
-                  </td>
-                  <td>
-                    {vacationRequest.updatedAt ? (
-                      <TextFormat type="date" value={vacationRequest.updatedAt} format={APP_DATE_FORMAT} />
-                    ) : null}
-                  </td>
-                  <td>
-                    {vacationRequest.employee ? (
+                    {vacationRequest.employee?.id ? (
                       <Link to={`/employee/${vacationRequest.employee.id}`}>{vacationRequest.employee.id}</Link>
                     ) : (
                       ''
                     )}
                   </td>
+
+                  <td>
+                    {vacationRequest.createdAt ? (
+                      <TextFormat type="date" value={vacationRequest.createdAt} format={APP_DATE_FORMAT} />
+                    ) : null}
+                  </td>
+                  {/* Approval Actions */}
+                  <td>
+                    {canModifyStatus(vacationRequest.status) ? (
+                      <div className="btn-group">
+                        <Button color="success" size="sm" onClick={() => handleAccept(vacationRequest)} disabled={updating}>
+                          <FontAwesomeIcon icon="check" /> Accept
+                        </Button>
+                        <Button color="danger" size="sm" onClick={() => handleReject(vacationRequest)} disabled={updating}>
+                          <FontAwesomeIcon icon="times" /> Reject
+                        </Button>
+                      </div>
+                    ) : (
+                      <span className="text-muted">No actions</span>
+                    )}
+                  </td>
+                  {/* Management */}
                   <td className="text-end">
                     <div className="btn-group flex-btn-group-container">
-                      <Button
-                        tag={Link}
-                        to={`/vacation-request/${vacationRequest.id}`}
-                        color="info"
-                        size="sm"
-                        data-cy="entityDetailsButton"
-                      >
-                        <FontAwesomeIcon icon="eye" /> <span className="d-none d-md-inline">View</span>
+                      <Button tag={Link} to={`/vacation-request/${vacationRequest.id}`} color="info" size="sm">
+                        <FontAwesomeIcon icon="eye" /> View
                       </Button>
-                      <Button
-                        tag={Link}
-                        to={`/vacation-request/${vacationRequest.id}/edit?page=${paginationState.activePage}&sort=${paginationState.sort},${paginationState.order}`}
-                        color="primary"
-                        size="sm"
-                        data-cy="entityEditButton"
-                      >
-                        <FontAwesomeIcon icon="pencil-alt" /> <span className="d-none d-md-inline">Edit</span>
+                      <Button tag={Link} to={`/vacation-request/${vacationRequest.id}/edit`} color="primary" size="sm">
+                        <FontAwesomeIcon icon="pencil-alt" /> Edit
                       </Button>
                       <Button
                         onClick={() =>
@@ -202,9 +223,8 @@ export const VacationRequest = () => {
                         }
                         color="danger"
                         size="sm"
-                        data-cy="entityDeleteButton"
                       >
-                        <FontAwesomeIcon icon="trash" /> <span className="d-none d-md-inline">Delete</span>
+                        <FontAwesomeIcon icon="trash" /> Delete
                       </Button>
                     </div>
                   </td>

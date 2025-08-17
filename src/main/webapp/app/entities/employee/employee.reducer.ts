@@ -39,12 +39,16 @@ export const getEntity = createAsyncThunk(
 export const createEntity = createAsyncThunk(
   'employee/create_entity',
   async (entity: IEmployee, thunkAPI) => {
-    const result = await axios.post<IEmployee>(apiUrl, cleanEntity(entity));
+    const result = await axios.post<IEmployee>('api/v1/employees', cleanEntity(entity));
     thunkAPI.dispatch(getEntities({}));
     return result;
   },
   { serializeError: serializeAxiosError },
 );
+export const getMyProfile = createAsyncThunk('employee/getMyProfile', async () => {
+  const response = await axios.get<IEmployee>('/api/employees/my-profile');
+  return response.data;
+});
 
 export const updateEntity = createAsyncThunk(
   'employee/update_entity',

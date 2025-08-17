@@ -51,7 +51,7 @@ public class Employee implements Serializable {
     private Integer vacationBalance;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(unique = true)
+    @JoinColumn(name = "id") // shared PK
     private User user;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "employee")

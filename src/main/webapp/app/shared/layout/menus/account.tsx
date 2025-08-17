@@ -1,10 +1,12 @@
 import React from 'react';
 import MenuItem from 'app/shared/layout/menus/menu-item';
-
 import { NavDropdown } from './menu-components';
 
 const accountMenuItemsAuthenticated = () => (
   <>
+    <MenuItem icon="user" to="/account/profile" data-cy="myProfile">
+      My Profile
+    </MenuItem>
     <MenuItem icon="wrench" to="/account/settings" data-cy="settings">
       Settings
     </MenuItem>

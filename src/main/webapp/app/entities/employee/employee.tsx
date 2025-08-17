@@ -126,9 +126,6 @@ export const Employee = () => {
                 <th className="hand" onClick={sort('vacationBalance')}>
                   Vacation Balance <FontAwesomeIcon icon={getSortIconByFieldName('vacationBalance')} />
                 </th>
-                <th>
-                  User <FontAwesomeIcon icon="sort" />
-                </th>
                 <th />
               </tr>
             </thead>
@@ -145,7 +142,6 @@ export const Employee = () => {
                   <td>{employee.userRole}</td>
                   <td>{employee.createdAt ? <TextFormat type="date" value={employee.createdAt} format={APP_DATE_FORMAT} /> : null}</td>
                   <td>{employee.vacationBalance}</td>
-                  <td>{employee.user ? employee.user.id : ''}</td>
                   <td className="text-end">
                     <div className="btn-group flex-btn-group-container">
                       <Button tag={Link} to={`/employee/${employee.id}`} color="info" size="sm" data-cy="entityDetailsButton">

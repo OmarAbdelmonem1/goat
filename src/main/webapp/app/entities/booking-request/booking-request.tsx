@@ -9,7 +9,7 @@ import { ASC, DESC, ITEMS_PER_PAGE, SORT } from 'app/shared/util/pagination.cons
 import { overridePaginationStateWithQueryParams } from 'app/shared/util/entity-utils';
 import { useAppDispatch, useAppSelector } from 'app/config/store';
 
-import { getEntities } from './booking-request.reducer';
+import { getEntities, updateEntity } from './booking-request.reducer';
 
 export const BookingRequest = () => {
   const dispatch = useAppDispatch();
@@ -24,6 +24,7 @@ export const BookingRequest = () => {
   const bookingRequestList = useAppSelector(state => state.bookingRequest.entities);
   const loading = useAppSelector(state => state.bookingRequest.loading);
   const totalItems = useAppSelector(state => state.bookingRequest.totalItems);
+  const updating = useAppSelector(state => state.bookingRequest.updating);
 
   const getAllEntities = () => {
     dispatch(
@@ -89,6 +90,41 @@ export const BookingRequest = () => {
     return order === ASC ? faSortUp : faSortDown;
   };
 
+  const handleAccept = bookingRequest => {
+    const updatedBookingRequest = {
+      ...bookingRequest,
+      status: 'APPROVED',
+      updatedAt: new Date().toISOString(),
+    };
+    dispatch(updateEntity(updatedBookingRequest));
+  };
+
+  const handleReject = bookingRequest => {
+    const updatedBookingRequest = {
+      ...bookingRequest,
+      status: 'REJECTED',
+      updatedAt: new Date().toISOString(),
+    };
+    dispatch(updateEntity(updatedBookingRequest));
+  };
+
+  const getStatusColor = status => {
+    switch (status) {
+      case 'APPROVED':
+        return 'success';
+      case 'REJECTED':
+        return 'danger';
+      case 'PENDING':
+        return 'warning';
+      default:
+        return 'secondary';
+    }
+  };
+
+  const canModifyStatus = status => {
+    return status === 'PENDING';
+  };
+
   return (
     <div>
       <h2 id="booking-request-heading" data-cy="BookingRequestHeading">
@@ -123,9 +159,6 @@ export const BookingRequest = () => {
                 <th className="hand" onClick={sort('createdAt')}>
                   Created At <FontAwesomeIcon icon={getSortIconByFieldName('createdAt')} />
                 </th>
-                <th className="hand" onClick={sort('updatedAt')}>
-                  Updated At <FontAwesomeIcon icon={getSortIconByFieldName('updatedAt')} />
-                </th>
                 <th className="hand" onClick={sort('purpose')}>
                   Purpose <FontAwesomeIcon icon={getSortIconByFieldName('purpose')} />
                 </th>
@@ -135,6 +168,7 @@ export const BookingRequest = () => {
                 <th>
                   Meeting Room <FontAwesomeIcon icon="sort" />
                 </th>
+                <th>Actions</th>
                 <th />
               </tr>
             </thead>
@@ -152,12 +186,11 @@ export const BookingRequest = () => {
                   <td>
                     {bookingRequest.endTime ? <TextFormat type="date" value={bookingRequest.endTime} format={APP_DATE_FORMAT} /> : null}
                   </td>
-                  <td>{bookingRequest.status}</td>
                   <td>
-                    {bookingRequest.createdAt ? <TextFormat type="date" value={bookingRequest.createdAt} format={APP_DATE_FORMAT} /> : null}
+                    <span className={`badge bg-${getStatusColor(bookingRequest.status)}`}>{bookingRequest.status}</span>
                   </td>
                   <td>
-                    {bookingRequest.updatedAt ? <TextFormat type="date" value={bookingRequest.updatedAt} format={APP_DATE_FORMAT} /> : null}
+                    {bookingRequest.createdAt ? <TextFormat type="date" value={bookingRequest.createdAt} format={APP_DATE_FORMAT} /> : null}
                   </td>
                   <td>{bookingRequest.purpose}</td>
                   <td>
@@ -172,6 +205,32 @@ export const BookingRequest = () => {
                       <Link to={`/meeting-room/${bookingRequest.meetingRoom.id}`}>{bookingRequest.meetingRoom.id}</Link>
                     ) : (
                       ''
+                    )}
+                  </td>
+                  <td>
+                    {canModifyStatus(bookingRequest.status) ? (
+                      <div className="btn-group">
+                        <Button
+                          color="success"
+                          size="sm"
+                          onClick={() => handleAccept(bookingRequest)}
+                          disabled={updating}
+                          data-cy="acceptButton"
+                        >
+                          <FontAwesomeIcon icon="check" /> Accept
+                        </Button>
+                        <Button
+                          color="danger"
+                          size="sm"
+                          onClick={() => handleReject(bookingRequest)}
+                          disabled={updating}
+                          data-cy="rejectButton"
+                        >
+                          <FontAwesomeIcon icon="times" /> Reject
+                        </Button>
+                      </div>
+                    ) : (
+                      <span className="text-muted">No actions available</span>
                     )}
                   </td>
                   <td className="text-end">
@@ -229,5 +288,4 @@ export const BookingRequest = () => {
     </div>
   );
 };
-
 export default BookingRequest;

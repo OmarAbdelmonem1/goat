@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Button, Col, FormText, Row } from 'reactstrap';
+import { Button, Col, Row } from 'reactstrap';
 import { ValidatedField, ValidatedForm } from 'react-jhipster';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
@@ -9,24 +9,21 @@ import { useAppDispatch, useAppSelector } from 'app/config/store';
 
 import { getEntities as getEmployees } from 'app/entities/employee/employee.reducer';
 import { VacationType } from 'app/shared/model/enumerations/vacation-type.model';
-import { Status } from 'app/shared/model/enumerations/status.model';
 import { createEntity, getEntity, reset, updateEntity } from './vacation-request.reducer';
 
 export const VacationRequestUpdate = () => {
   const dispatch = useAppDispatch();
-
   const navigate = useNavigate();
-
   const { id } = useParams<'id'>();
   const isNew = id === undefined;
 
   const employees = useAppSelector(state => state.employee.entities);
+  const account = useAppSelector(state => state.authentication.account);
   const vacationRequestEntity = useAppSelector(state => state.vacationRequest.entity);
   const loading = useAppSelector(state => state.vacationRequest.loading);
   const updating = useAppSelector(state => state.vacationRequest.updating);
   const updateSuccess = useAppSelector(state => state.vacationRequest.updateSuccess);
   const vacationTypeValues = Object.keys(VacationType);
-  const statusValues = Object.keys(Status);
 
   const handleClose = () => {
     navigate(`/vacation-request${location.search}`);
@@ -38,7 +35,6 @@ export const VacationRequestUpdate = () => {
     } else {
       dispatch(getEntity(id));
     }
-
     dispatch(getEmployees({}));
   }, []);
 
@@ -55,10 +51,25 @@ export const VacationRequestUpdate = () => {
     values.createdAt = convertDateTimeToServer(values.createdAt);
     values.updatedAt = convertDateTimeToServer(values.updatedAt);
 
+    if (values.attachmentUploadedAt) {
+      values.attachmentUploadedAt = convertDateTimeToServer(values.attachmentUploadedAt);
+    }
+
     const entity = {
       ...vacationRequestEntity,
       ...values,
-      employee: employees.find(it => it.id.toString() === values.employee?.toString()),
+      status: 'PENDING', // Always set default
+      employee: employees.find(it => it.login === account.login), // Match logged-in user
+      attachments: [
+        {
+          id: values.attachmentId,
+          name: values.attachmentName,
+          url: values.attachmentUrl,
+          fileSize: values.attachmentFileSize,
+          contentType: values.attachmentContentType,
+          uploadedAt: values.attachmentUploadedAt,
+        },
+      ],
     };
 
     if (isNew) {
@@ -73,14 +84,23 @@ export const VacationRequestUpdate = () => {
       ? {
           createdAt: displayDefaultDateTime(),
           updatedAt: displayDefaultDateTime(),
+          attachmentUploadedAt: displayDefaultDateTime(),
+          status: 'PENDING',
+          employee: account?.login,
         }
       : {
-          type: 'ANNUAL',
-          status: 'PENDING',
+          type: vacationRequestEntity.type ?? 'ANNUAL',
+          status: vacationRequestEntity.status ?? 'PENDING',
           ...vacationRequestEntity,
           createdAt: convertDateTimeFromServer(vacationRequestEntity.createdAt),
           updatedAt: convertDateTimeFromServer(vacationRequestEntity.updatedAt),
-          employee: vacationRequestEntity?.employee?.id,
+          employee: vacationRequestEntity?.employee?.login,
+          attachmentId: vacationRequestEntity?.attachments?.[0]?.id,
+          attachmentName: vacationRequestEntity?.attachments?.[0]?.name,
+          attachmentUrl: vacationRequestEntity?.attachments?.[0]?.url,
+          attachmentFileSize: vacationRequestEntity?.attachments?.[0]?.fileSize,
+          attachmentContentType: vacationRequestEntity?.attachments?.[0]?.contentType,
+          attachmentUploadedAt: convertDateTimeFromServer(vacationRequestEntity?.attachments?.[0]?.uploadedAt),
         };
 
   return (
@@ -98,80 +118,54 @@ export const VacationRequestUpdate = () => {
             <p>Loading...</p>
           ) : (
             <ValidatedForm defaultValues={defaultValues()} onSubmit={saveEntity}>
-              {!isNew ? (
-                <ValidatedField name="id" required readOnly id="vacation-request-id" label="ID" validate={{ required: true }} />
-              ) : null}
+              {!isNew && <ValidatedField name="id" readOnly id="vacation-request-id" label="ID" validate={{ required: true }} />}
               <ValidatedField
                 label="Start Date"
                 id="vacation-request-startDate"
                 name="startDate"
-                data-cy="startDate"
                 type="date"
-                validate={{
-                  required: { value: true, message: 'This field is required.' },
-                }}
+                validate={{ required: { value: true, message: 'This field is required.' } }}
               />
               <ValidatedField
                 label="End Date"
                 id="vacation-request-endDate"
                 name="endDate"
-                data-cy="endDate"
                 type="date"
-                validate={{
-                  required: { value: true, message: 'This field is required.' },
-                }}
+                validate={{ required: { value: true, message: 'This field is required.' } }}
               />
-              <ValidatedField label="Type" id="vacation-request-type" name="type" data-cy="type" type="select">
+              <ValidatedField label="Type" id="vacation-request-type" name="type" type="select" validate={{ required: true }}>
                 {vacationTypeValues.map(vacationType => (
                   <option value={vacationType} key={vacationType}>
                     {vacationType}
                   </option>
                 ))}
               </ValidatedField>
-              <ValidatedField label="Reason" id="vacation-request-reason" name="reason" data-cy="reason" type="textarea" />
-              <ValidatedField label="Status" id="vacation-request-status" name="status" data-cy="status" type="select">
-                {statusValues.map(status => (
-                  <option value={status} key={status}>
-                    {status}
-                  </option>
-                ))}
-              </ValidatedField>
               <ValidatedField
-                label="Created At"
-                id="vacation-request-createdAt"
-                name="createdAt"
-                data-cy="createdAt"
-                type="datetime-local"
-                placeholder="YYYY-MM-DD HH:mm"
+                label="Reason"
+                id="vacation-request-reason"
+                name="reason"
+                type="textarea"
+                validate={{
+                  required: { value: true, message: 'This field is required.' },
+                  maxLength: { value: 500, message: 'Reason cannot exceed 500 characters.' },
+                }}
               />
-              <ValidatedField
-                label="Updated At"
-                id="vacation-request-updatedAt"
-                name="updatedAt"
-                data-cy="updatedAt"
-                type="datetime-local"
-                placeholder="YYYY-MM-DD HH:mm"
-              />
-              <ValidatedField id="vacation-request-employee" name="employee" data-cy="employee" label="Employee" type="select" required>
-                <option value="" key="0" />
-                {employees
-                  ? employees.map(otherEntity => (
-                      <option value={otherEntity.id} key={otherEntity.id}>
-                        {otherEntity.id}
-                      </option>
-                    ))
-                  : null}
-              </ValidatedField>
-              <FormText>This field is required.</FormText>
-              <Button tag={Link} id="cancel-save" data-cy="entityCreateCancelButton" to="/vacation-request" replace color="info">
-                <FontAwesomeIcon icon="arrow-left" />
-                &nbsp;
-                <span className="d-none d-md-inline">Back</span>
+              {/* Hidden default status field */}
+              <input type="hidden" name="status" value="PENDING" />
+              {/* Hidden employee field */}
+              <input type="hidden" name="employee" value={account?.login || ''} />
+              <h5 className="mt-4">Attachment</h5>
+              <ValidatedField label="Attachment Name" name="attachmentName" type="text" validate={{ required: true }} />
+              <ValidatedField label="Attachment URL" name="attachmentUrl" type="text" validate={{ required: true }} />
+              <ValidatedField label="File Size" name="attachmentFileSize" type="number" min="0" />
+              <ValidatedField label="Content Type" name="attachmentContentType" type="text" />
+              <ValidatedField label="Uploaded At" name="attachmentUploadedAt" type="datetime-local" placeholder="YYYY-MM-DD HH:mm" />
+              <Button tag={Link} id="cancel-save" to="/vacation-request" replace color="info">
+                <FontAwesomeIcon icon="arrow-left" /> Back
               </Button>
               &nbsp;
-              <Button color="primary" id="save-entity" data-cy="entityCreateSaveButton" type="submit" disabled={updating}>
-                <FontAwesomeIcon icon="save" />
-                &nbsp; Save
+              <Button color="primary" id="save-entity" type="submit" disabled={updating}>
+                <FontAwesomeIcon icon="save" /> Save
               </Button>
             </ValidatedForm>
           )}

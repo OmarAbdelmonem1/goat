@@ -38,7 +38,7 @@ public class BookingRequest implements Serializable {
     @Column(name = "status", nullable = false)
     private Status status;
 
-    @NotNull
+    //@NotNull
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -59,7 +59,7 @@ public class BookingRequest implements Serializable {
     private Set<Employee> invitedUsers = new HashSet<>();
 
     @ManyToOne(optional = false)
-    @NotNull
+    //@NotNull
     @JsonIgnoreProperties(value = { "user", "bookingRequests", "vacationRequests", "invitations" }, allowSetters = true)
     private Employee employee;
 

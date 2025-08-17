@@ -73,7 +73,7 @@ export const VacationRequestDetail = () => {
             ) : null}
           </dd>
           <dt>Employee</dt>
-          <dd>{vacationRequestEntity.employee ? vacationRequestEntity.employee.id : ''}</dd>
+          <dd>{vacationRequestEntity.employee.name ? vacationRequestEntity.employee.id : ''}</dd>
         </dl>
         <Button tag={Link} to="/vacation-request" replace color="info" data-cy="entityDetailsBackButton">
           <FontAwesomeIcon icon="arrow-left" /> <span className="d-none d-md-inline">Back</span>

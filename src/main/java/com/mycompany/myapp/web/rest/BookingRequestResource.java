@@ -1,6 +1,9 @@
 package com.mycompany.myapp.web.rest;
 
+import com.mycompany.myapp.domain.Employee;
 import com.mycompany.myapp.repository.BookingRequestRepository;
+import com.mycompany.myapp.repository.EmployeeRepository;
+import com.mycompany.myapp.security.SecurityUtils;
 import com.mycompany.myapp.service.BookingRequestQueryService;
 import com.mycompany.myapp.service.BookingRequestService;
 import com.mycompany.myapp.service.criteria.BookingRequestCriteria;
@@ -10,6 +13,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -45,15 +49,18 @@ public class BookingRequestResource {
     private final BookingRequestRepository bookingRequestRepository;
 
     private final BookingRequestQueryService bookingRequestQueryService;
+    private final EmployeeRepository employeeRepository;
 
     public BookingRequestResource(
         BookingRequestService bookingRequestService,
         BookingRequestRepository bookingRequestRepository,
-        BookingRequestQueryService bookingRequestQueryService
+        BookingRequestQueryService bookingRequestQueryService,
+        EmployeeRepository employeeRepository
     ) {
         this.bookingRequestService = bookingRequestService;
         this.bookingRequestRepository = bookingRequestRepository;
         this.bookingRequestQueryService = bookingRequestQueryService;
+        this.employeeRepository = employeeRepository;
     }
 
     /**
@@ -67,13 +74,16 @@ public class BookingRequestResource {
     public ResponseEntity<BookingRequestDTO> createBookingRequest(@Valid @RequestBody BookingRequestDTO bookingRequestDTO)
         throws URISyntaxException {
         LOG.debug("REST request to save BookingRequest : {}", bookingRequestDTO);
+
         if (bookingRequestDTO.getId() != null) {
             throw new BadRequestAlertException("A new bookingRequest cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        bookingRequestDTO = bookingRequestService.save(bookingRequestDTO);
-        return ResponseEntity.created(new URI("/api/booking-requests/" + bookingRequestDTO.getId()))
-            .headers(HeaderUtil.createEntityCreationAlert(applicationName, false, ENTITY_NAME, bookingRequestDTO.getId().toString()))
-            .body(bookingRequestDTO);
+
+        BookingRequestDTO result = bookingRequestService.save(bookingRequestDTO);
+
+        return ResponseEntity.created(new URI("/api/booking-requests/" + result.getId()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, false, ENTITY_NAME, result.getId().toString()))
+            .body(result);
     }
 
     /**

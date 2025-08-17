@@ -5,11 +5,8 @@ import { ValidatedField, ValidatedForm, isNumber } from 'react-jhipster';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import { convertDateTimeFromServer, convertDateTimeToServer, displayDefaultDateTime } from 'app/shared/util/date-utils';
-import { mapIdList } from 'app/shared/util/entity-utils';
 import { useAppDispatch, useAppSelector } from 'app/config/store';
 
-import { getUsers } from 'app/modules/administration/user-management/user-management.reducer';
-import { getEntities as getBookingRequests } from 'app/entities/booking-request/booking-request.reducer';
 import { DepartmentType } from 'app/shared/model/enumerations/department-type.model';
 import { createEntity, getEntity, reset, updateEntity } from './employee.reducer';
 
@@ -21,8 +18,6 @@ export const EmployeeUpdate = () => {
   const { id } = useParams<'id'>();
   const isNew = id === undefined;
 
-  const users = useAppSelector(state => state.userManagement.users);
-  const bookingRequests = useAppSelector(state => state.bookingRequest.entities);
   const employeeEntity = useAppSelector(state => state.employee.entity);
   const loading = useAppSelector(state => state.employee.loading);
   const updating = useAppSelector(state => state.employee.updating);
@@ -39,9 +34,6 @@ export const EmployeeUpdate = () => {
     } else {
       dispatch(getEntity(id));
     }
-
-    dispatch(getUsers({}));
-    dispatch(getBookingRequests({}));
   }, []);
 
   useEffect(() => {
@@ -62,8 +54,6 @@ export const EmployeeUpdate = () => {
     const entity = {
       ...employeeEntity,
       ...values,
-      user: users.find(it => it.id.toString() === values.user?.toString()),
-      invitations: mapIdList(values.invitations),
     };
 
     if (isNew) {
@@ -82,8 +72,6 @@ export const EmployeeUpdate = () => {
           userRole: 'EMPLOYEE',
           ...employeeEntity,
           createdAt: convertDateTimeFromServer(employeeEntity.createdAt),
-          user: employeeEntity?.user?.id,
-          invitations: employeeEntity?.invitations?.map(e => e.id.toString()),
         };
 
   return (
@@ -158,26 +146,6 @@ export const EmployeeUpdate = () => {
                   validate: v => isNumber(v) || 'This field should be a number.',
                 }}
               />
-              <ValidatedField id="employee-user" name="user" data-cy="user" label="User" type="select">
-                <option value="" key="0" />
-                {users
-                  ? users.map(otherEntity => (
-                      <option value={otherEntity.id} key={otherEntity.id}>
-                        {otherEntity.id}
-                      </option>
-                    ))
-                  : null}
-              </ValidatedField>
-              <ValidatedField label="Invitations" id="employee-invitations" data-cy="invitations" type="select" multiple name="invitations">
-                <option value="" key="0" />
-                {bookingRequests
-                  ? bookingRequests.map(otherEntity => (
-                      <option value={otherEntity.id} key={otherEntity.id}>
-                        {otherEntity.id}
-                      </option>
-                    ))
-                  : null}
-              </ValidatedField>
               <Button tag={Link} id="cancel-save" data-cy="entityCreateCancelButton" to="/employee" replace color="info">
                 <FontAwesomeIcon icon="arrow-left" />
                 &nbsp;

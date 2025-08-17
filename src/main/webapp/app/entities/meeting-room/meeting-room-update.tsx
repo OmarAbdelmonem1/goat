@@ -125,6 +125,7 @@ export const MeetingRoomUpdate = () => {
                   ? equipment.map(otherEntity => (
                       <option value={otherEntity.id} key={otherEntity.id}>
                         {otherEntity.id}
+                        {otherEntity.name ? ` - ${otherEntity.name}` : ''}
                       </option>
                     ))
                   : null}

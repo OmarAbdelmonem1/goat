@@ -19,9 +19,9 @@ public class EmployeeService {
 
     private static final Logger LOG = LoggerFactory.getLogger(EmployeeService.class);
 
-    private final EmployeeRepository employeeRepository;
+    protected final EmployeeRepository employeeRepository;
 
-    private final EmployeeMapper employeeMapper;
+    protected final EmployeeMapper employeeMapper;
 
     public EmployeeService(EmployeeRepository employeeRepository, EmployeeMapper employeeMapper) {
         this.employeeRepository = employeeRepository;

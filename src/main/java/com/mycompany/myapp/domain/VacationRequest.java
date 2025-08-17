@@ -35,7 +35,7 @@ public class VacationRequest implements Serializable {
     @Column(name = "end_date", nullable = false)
     private LocalDate endDate;
 
-    @NotNull
+    //@NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private VacationType type;
@@ -44,7 +44,7 @@ public class VacationRequest implements Serializable {
     @Column(name = "reason")
     private String reason;
 
-    @NotNull
+    //@NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private Status status;
@@ -60,7 +60,7 @@ public class VacationRequest implements Serializable {
     private Set<Attachment> attachments = new HashSet<>();
 
     @ManyToOne(optional = false)
-    @NotNull
+    //@NotNull
     @JsonIgnoreProperties(value = { "user", "bookingRequests", "vacationRequests", "invitations" }, allowSetters = true)
     private Employee employee;
 
@@ -175,12 +175,16 @@ public class VacationRequest implements Serializable {
     }
 
     public void setAttachments(Set<Attachment> attachments) {
+        // Remove old back-references
         if (this.attachments != null) {
-            this.attachments.forEach(i -> i.setVacationRequest(null));
+            this.attachments.forEach(a -> a.setVacationRequest(null));
         }
+
+        // Set new back-references
         if (attachments != null) {
-            attachments.forEach(i -> i.setVacationRequest(this));
+            attachments.forEach(a -> a.setVacationRequest(this));
         }
+
         this.attachments = attachments;
     }
 

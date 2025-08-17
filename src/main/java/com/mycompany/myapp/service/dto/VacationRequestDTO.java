@@ -7,6 +7,7 @@ import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -23,21 +24,30 @@ public class VacationRequestDTO implements Serializable {
     @NotNull
     private LocalDate endDate;
 
-    @NotNull
+    //@NotNull
     private VacationType type;
 
     @Lob
     private String reason;
 
-    @NotNull
+    //@NotNull
     private Status status;
 
     private Instant createdAt;
 
     private Instant updatedAt;
 
-    @NotNull
+    //@NotNull
     private EmployeeDTO employee;
+    private List<AttachmentDTO> attachments;
+
+    public List<AttachmentDTO> getAttachments() {
+        return attachments;
+    }
+
+    public void setAttachments(List<AttachmentDTO> attachments) {
+        this.attachments = attachments;
+    }
 
     public Long getId() {
         return id;

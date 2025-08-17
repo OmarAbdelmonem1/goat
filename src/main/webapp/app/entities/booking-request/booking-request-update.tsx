@@ -27,7 +27,8 @@ export const BookingRequestUpdate = () => {
   const loading = useAppSelector(state => state.bookingRequest.loading);
   const updating = useAppSelector(state => state.bookingRequest.updating);
   const updateSuccess = useAppSelector(state => state.bookingRequest.updateSuccess);
-  const statusValues = Object.keys(Status);
+  // Get current user from authentication state
+  const currentUser = useAppSelector(state => state.authentication.account);
 
   const handleClose = () => {
     navigate(`/booking-request${location.search}`);
@@ -56,14 +57,16 @@ export const BookingRequestUpdate = () => {
     }
     values.startTime = convertDateTimeToServer(values.startTime);
     values.endTime = convertDateTimeToServer(values.endTime);
-    values.createdAt = convertDateTimeToServer(values.createdAt);
-    values.updatedAt = convertDateTimeToServer(values.updatedAt);
+
+    // Find the current user's employee record
+    const currentEmployee = employees.find(emp => emp.user?.login === currentUser?.login);
 
     const entity = {
       ...bookingRequestEntity,
       ...values,
+      status: 'PENDING', // Always set status to PENDING
       invitedUsers: mapIdList(values.invitedUsers),
-      employee: employees.find(it => it.id.toString() === values.employee?.toString()),
+      employee: currentEmployee, // Set employee from current logged-in user
       meetingRoom: meetingRooms.find(it => it.id.toString() === values.meetingRoom?.toString()),
     };
 
@@ -79,18 +82,12 @@ export const BookingRequestUpdate = () => {
       ? {
           startTime: displayDefaultDateTime(),
           endTime: displayDefaultDateTime(),
-          createdAt: displayDefaultDateTime(),
-          updatedAt: displayDefaultDateTime(),
         }
       : {
-          status: 'PENDING',
           ...bookingRequestEntity,
           startTime: convertDateTimeFromServer(bookingRequestEntity.startTime),
           endTime: convertDateTimeFromServer(bookingRequestEntity.endTime),
-          createdAt: convertDateTimeFromServer(bookingRequestEntity.createdAt),
-          updatedAt: convertDateTimeFromServer(bookingRequestEntity.updatedAt),
           invitedUsers: bookingRequestEntity?.invitedUsers?.map(e => e.id.toString()),
-          employee: bookingRequestEntity?.employee?.id,
           meetingRoom: bookingRequestEntity?.meetingRoom?.id,
         };
 
@@ -134,32 +131,6 @@ export const BookingRequestUpdate = () => {
                   required: { value: true, message: 'This field is required.' },
                 }}
               />
-              <ValidatedField label="Status" id="booking-request-status" name="status" data-cy="status" type="select">
-                {statusValues.map(status => (
-                  <option value={status} key={status}>
-                    {status}
-                  </option>
-                ))}
-              </ValidatedField>
-              <ValidatedField
-                label="Created At"
-                id="booking-request-createdAt"
-                name="createdAt"
-                data-cy="createdAt"
-                type="datetime-local"
-                placeholder="YYYY-MM-DD HH:mm"
-                validate={{
-                  required: { value: true, message: 'This field is required.' },
-                }}
-              />
-              <ValidatedField
-                label="Updated At"
-                id="booking-request-updatedAt"
-                name="updatedAt"
-                data-cy="updatedAt"
-                type="datetime-local"
-                placeholder="YYYY-MM-DD HH:mm"
-              />
               <ValidatedField
                 label="Purpose"
                 id="booking-request-purpose"
@@ -183,21 +154,11 @@ export const BookingRequestUpdate = () => {
                   ? employees.map(otherEntity => (
                       <option value={otherEntity.id} key={otherEntity.id}>
                         {otherEntity.id}
+                        {otherEntity.name ? ` - ${otherEntity.name}` : ''}
                       </option>
                     ))
                   : null}
               </ValidatedField>
-              <ValidatedField id="booking-request-employee" name="employee" data-cy="employee" label="Employee" type="select" required>
-                <option value="" key="0" />
-                {employees
-                  ? employees.map(otherEntity => (
-                      <option value={otherEntity.id} key={otherEntity.id}>
-                        {otherEntity.id}
-                      </option>
-                    ))
-                  : null}
-              </ValidatedField>
-              <FormText>This field is required.</FormText>
               <ValidatedField
                 id="booking-request-meetingRoom"
                 name="meetingRoom"
@@ -205,17 +166,17 @@ export const BookingRequestUpdate = () => {
                 label="Meeting Room"
                 type="select"
                 required
+                validate={{ required: { value: true, message: 'This field is required.' } }}
               >
                 <option value="" key="0" />
                 {meetingRooms
                   ? meetingRooms.map(otherEntity => (
                       <option value={otherEntity.id} key={otherEntity.id}>
-                        {otherEntity.id}
+                        {otherEntity.name || otherEntity.id}
                       </option>
                     ))
                   : null}
               </ValidatedField>
-              <FormText>This field is required.</FormText>
               <Button tag={Link} id="cancel-save" data-cy="entityCreateCancelButton" to="/booking-request" replace color="info">
                 <FontAwesomeIcon icon="arrow-left" />
                 &nbsp;

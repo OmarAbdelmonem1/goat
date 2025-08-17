@@ -25,7 +25,7 @@ public class BookingRequestDTO implements Serializable {
     @NotNull
     private Status status;
 
-    @NotNull
+    //@NotNull
     private Instant createdAt;
 
     private Instant updatedAt;
@@ -35,7 +35,7 @@ public class BookingRequestDTO implements Serializable {
 
     private Set<EmployeeDTO> invitedUsers = new HashSet<>();
 
-    @NotNull
+    //@NotNull
     private EmployeeDTO employee;
 
     @NotNull
