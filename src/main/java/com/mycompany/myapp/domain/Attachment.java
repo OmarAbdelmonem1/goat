@@ -1,5 +1,6 @@
 package com.mycompany.myapp.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -44,7 +45,7 @@ public class Attachment implements Serializable {
     private Instant uploadedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JsonIgnoreProperties(value = { "attachments", "employee" }, allowSetters = true)
+    @JsonIgnore
     private VacationRequest vacationRequest;
 
     // jhipster-needle-entity-add-field - JHipster will add fields here

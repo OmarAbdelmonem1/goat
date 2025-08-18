@@ -47,7 +47,7 @@ public class VacationRequestServiceExtension extends VacationRequestService {
     /**
      * Save a vacationRequest with attachments
      */
-    public VacationRequestDTO save(VacationRequestDTO dto, List<Attachment> attachments) {
+    public VacationRequestDTO save(VacationRequestDTO dto) {
         LOG.debug("Request to save VacationRequest : {}", dto);
 
         VacationRequest vacationRequestEntity = vacationRequestMapper.toEntity(dto);
@@ -64,55 +64,70 @@ public class VacationRequestServiceExtension extends VacationRequestService {
         vacationRequestEntity.setEmployee(employee);
 
         VacationRequest savedVacationRequest = vacationRequestRepository.save(vacationRequestEntity);
-        // Save attachments
-        if (attachments != null) {
-            attachments.forEach(att -> {
-                att.setVacationRequest(savedVacationRequest);
-                att.setUploadedAt(Instant.now());
-                attachmentRepository.save(att);
-            });
+
+        // Map and save attachments from DTO
+        if (dto.getAttachments() != null) {
+            dto
+                .getAttachments()
+                .forEach(attDto -> {
+                    Attachment attachment = new Attachment();
+                    attachment.setName(attDto.getName());
+                    attachment.setUrl(attDto.getUrl());
+                    attachment.setFileSize(attDto.getFileSize());
+                    attachment.setContentType(attDto.getContentType());
+                    attachment.setUploadedAt(attDto.getUploadedAt() != null ? attDto.getUploadedAt() : Instant.now());
+                    attachment.setVacationRequest(savedVacationRequest);
+                    attachmentRepository.save(attachment);
+                });
         }
 
         return vacationRequestMapper.toDto(savedVacationRequest);
     }
 
-    /**
-     * Update a vacationRequest with attachments
-     */
     @Transactional
-    public VacationRequestDTO update(VacationRequestDTO dto, List<Attachment> attachments) {
+    public VacationRequestDTO update(VacationRequestDTO dto) {
         LOG.debug("Request to update VacationRequest : {}", dto);
 
-        // Map DTO to entity
-        VacationRequest vacationRequestEntity = vacationRequestMapper.toEntity(dto);
+        // Fetch existing entity
+        VacationRequest vacationRequest = vacationRequestRepository
+            .findById(dto.getId())
+            .orElseThrow(() -> new BadRequestAlertException("VacationRequest not found", "vacationRequest", "idnotfound"));
+
+        // Map only updatable fields
+        vacationRequest.setStartDate(dto.getStartDate());
+        vacationRequest.setEndDate(dto.getEndDate());
+        vacationRequest.setReason(dto.getReason());
+        vacationRequest.setType(dto.getType());
+        vacationRequest.setStatus(dto.getStatus());
+        vacationRequest.setUpdatedAt(Instant.now());
+
+        // Ensure employee is set (important!)
+        if (vacationRequest.getEmployee() == null) {
+            Long userId = SecurityUtils.getCurrentUserId()
+                .orElseThrow(() -> new BadRequestAlertException("Current user ID not found", "vacationRequest", "usernotfound"));
+
+            Employee employee = employeeRepository
+                .findById(userId)
+                .orElseThrow(() -> new BadRequestAlertException("Employee not found", "vacationRequest", "employeenotfound"));
+
+            vacationRequest.setEmployee(employee);
+        }
 
         // Handle vacation balance if approved
-        if ("Approved".equalsIgnoreCase(vacationRequestEntity.getStatus().toString())) {
-            Employee employee = vacationRequestEntity.getEmployee();
-            if (employee != null) {
-                int days = (int) ChronoUnit.DAYS.between(vacationRequestEntity.getStartDate(), vacationRequestEntity.getEndDate()) + 1;
-                if (employee.getVacationBalance() != null && employee.getVacationBalance() >= days) {
-                    employee.setVacationBalance(employee.getVacationBalance() - days);
-                    employeeRepository.save(employee);
-                } else {
-                    throw new IllegalStateException("Not enough vacation balance");
-                }
+        if ("Approved".equalsIgnoreCase(vacationRequest.getStatus().toString())) {
+            Employee employee = vacationRequest.getEmployee();
+            int days = (int) ChronoUnit.DAYS.between(vacationRequest.getStartDate(), vacationRequest.getEndDate()) + 1;
+            if (employee.getVacationBalance() != null && employee.getVacationBalance() >= days) {
+                employee.setVacationBalance(employee.getVacationBalance() - days);
+                employeeRepository.save(employee);
+            } else {
+                throw new IllegalStateException("Not enough vacation balance");
             }
         }
 
-        // Save vacation request once
-        VacationRequest savedVacationRequest = vacationRequestRepository.save(vacationRequestEntity);
-
-        // Save/update attachments
-        if (attachments != null) {
-            attachments.forEach(att -> {
-                att.setVacationRequest(savedVacationRequest); // use final variable
-                att.setUploadedAt(Instant.now());
-                attachmentRepository.save(att);
-            });
-        }
-
-        return vacationRequestMapper.toDto(savedVacationRequest);
+        // Save the entity
+        vacationRequest = vacationRequestRepository.save(vacationRequest);
+        return vacationRequestMapper.toDto(vacationRequest);
     }
 
     /**

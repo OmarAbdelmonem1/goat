@@ -150,206 +150,23 @@ public class BookingRequestService {
     public BookingRequestDTO update(BookingRequestDTO bookingRequestDTO) {
         LOG.debug("Request to update BookingRequest : {}", bookingRequestDTO);
 
+        // Fetch existing entity
         BookingRequest existing = bookingRequestRepository
             .findById(bookingRequestDTO.getId())
             .orElseThrow(() -> new BadRequestAlertException("Booking not found", "bookingRequest", "idnotfound"));
 
-        Status oldStatus = existing.getStatus();
-
-        BookingRequest bookingRequest = bookingRequestMapper.toEntity(bookingRequestDTO);
-        bookingRequest = bookingRequestRepository.save(bookingRequest);
-
-        // If status changed, send confirmation
-        if (!oldStatus.equals(bookingRequest.getStatus())) {
-            try {
-                sendStatusUpdateEmail(bookingRequest, oldStatus);
-            } catch (Exception e) {
-                LOG.error("Failed to send status update email for booking {}: {}", bookingRequest.getId(), e.getMessage());
-                // Don't throw exception as update was successful, just log the email error
-            }
+        // Link employee from DTO if present
+        if (bookingRequestDTO.getEmployee() != null && bookingRequestDTO.getEmployee().getId() != null) {
+            Employee employee = employeeRepository
+                .findById(bookingRequestDTO.getEmployee().getId())
+                .orElseThrow(() -> new BadRequestAlertException("Employee not found", "bookingRequest", "employeenotfound"));
+            existing.setEmployee(employee);
         }
 
-        return bookingRequestMapper.toDto(bookingRequest);
-    }
+        // Save entity
+        BookingRequest saved = bookingRequestRepository.save(existing);
 
-    /**
-     * Send confirmation email for approved bookings
-     */
-    private void sendBookingConfirmationEmail(BookingRequest booking) {
-        if (booking.getEmployee() == null || booking.getEmployee().getEmail() == null) {
-            LOG.warn("Cannot send confirmation email: employee or email is null for booking {}", booking.getId());
-            return;
-        }
-
-        String subject = "Booking Confirmed - " + booking.getMeetingRoom().getName();
-        String body = buildConfirmationEmailBody(booking);
-
-        sendEmail(booking.getEmployee().getEmail(), subject, body);
-        LOG.info("Sent booking confirmation email to {} for booking {}", booking.getEmployee().getEmail(), booking.getId());
-    }
-
-    /**
-     * Send notification email for pending bookings
-     */
-    private void sendPendingBookingEmail(BookingRequest booking) {
-        if (booking.getEmployee() == null || booking.getEmployee().getEmail() == null) {
-            LOG.warn("Cannot send pending booking email: employee or email is null for booking {}", booking.getId());
-            return;
-        }
-
-        String subject = "Booking Request Submitted - " + booking.getMeetingRoom().getName();
-        String body = buildPendingBookingEmailBody(booking);
-
-        sendEmail(booking.getEmployee().getEmail(), subject, body);
-        LOG.info("Sent pending booking notification email to {} for booking {}", booking.getEmployee().getEmail(), booking.getId());
-    }
-
-    /**
-     * Send status update email when booking status changes
-     */
-    private void sendStatusUpdateEmail(BookingRequest booking, Status oldStatus) {
-        if (booking.getEmployee() == null || booking.getEmployee().getEmail() == null) {
-            LOG.warn("Cannot send status update email: employee or email is null for booking {}", booking.getId());
-            return;
-        }
-
-        String subject = "Booking Status Update - " + booking.getMeetingRoom().getName();
-        String body = buildStatusUpdateEmailBody(booking, oldStatus);
-
-        sendEmail(booking.getEmployee().getEmail(), subject, body);
-        LOG.info(
-            "Sent status update email to {} for booking {} (changed from {} to {})",
-            booking.getEmployee().getEmail(),
-            booking.getId(),
-            oldStatus,
-            booking.getStatus()
-        );
-    }
-
-    /**
-     * Build email body for confirmed bookings
-     */
-    private String buildConfirmationEmailBody(BookingRequest booking) {
-        return String.format(
-            "Dear %s,\n\n" +
-            "Your booking request has been CONFIRMED!\n\n" +
-            "Booking Details:\n" +
-            "- Meeting Room: %s\n" +
-            "- Date & Time: %s to %s\n" +
-            "- Purpose: %s\n" +
-            "- Booking ID: %s\n\n" +
-            "Your meeting room is now reserved for the specified time.\n\n" +
-            "Best regards,\n%s",
-            booking.getEmployee().getName() != null ? booking.getEmployee().getName() : "User",
-            booking.getMeetingRoom().getName(),
-            formatDateTime(booking.getStartTime()),
-            formatDateTime(booking.getEndTime()),
-            booking.getPurpose() != null ? booking.getPurpose() : "Not specified",
-            booking.getId(),
-            applicationName
-        );
-    }
-
-    /**
-     * Build email body for pending bookings
-     */
-    private String buildPendingBookingEmailBody(BookingRequest booking) {
-        return String.format(
-            "Dear %s,\n\n" +
-            "Your booking request has been submitted and is PENDING APPROVAL.\n\n" +
-            "Booking Details:\n" +
-            "- Meeting Room: %s\n" +
-            "- Date & Time: %s to %s\n" +
-            "- Purpose: %s\n" +
-            "- Booking ID: %s\n\n" +
-            "You will receive another email once your booking is reviewed and approved/rejected.\n\n" +
-            "Best regards,\n%s",
-            booking.getEmployee().getName() != null ? booking.getEmployee().getName() : "User",
-            booking.getMeetingRoom().getName(),
-            formatDateTime(booking.getStartTime()),
-            formatDateTime(booking.getEndTime()),
-            booking.getPurpose() != null ? booking.getPurpose() : "Not specified",
-            booking.getId(),
-            applicationName
-        );
-    }
-
-    /**
-     * Build email body for status updates
-     */
-    private String buildStatusUpdateEmailBody(BookingRequest booking, Status oldStatus) {
-        String statusMessage;
-        String additionalInfo;
-
-        switch (booking.getStatus()) {
-            case APPROVED:
-                statusMessage = "APPROVED";
-                additionalInfo = "Your meeting room is now confirmed and reserved.";
-                break;
-            case REJECTED:
-                statusMessage = "REJECTED";
-                additionalInfo = "Please contact the administrator if you have questions about this decision.";
-                break;
-            default:
-                statusMessage = booking.getStatus().name();
-                additionalInfo = "Please check your booking dashboard for more details.";
-        }
-
-        return String.format(
-            "Dear %s,\n\n" +
-            "Your booking status has been updated to: %s\n\n" +
-            "Booking Details:\n" +
-            "- Meeting Room: %s\n" +
-            "- Date & Time: %s to %s\n" +
-            "- Purpose: %s\n" +
-            "- Booking ID: %s\n" +
-            "- Previous Status: %s\n" +
-            "- Current Status: %s\n\n" +
-            "%s\n\n" +
-            "Best regards,\n%s",
-            booking.getEmployee().getName() != null ? booking.getEmployee().getName() : "User",
-            statusMessage,
-            booking.getMeetingRoom().getName(),
-            formatDateTime(booking.getStartTime()),
-            formatDateTime(booking.getEndTime()),
-            booking.getPurpose() != null ? booking.getPurpose() : "Not specified",
-            booking.getId(),
-            oldStatus.name(),
-            booking.getStatus().name(),
-            additionalInfo,
-            applicationName
-        );
-    }
-
-    /**
-     * Send email using JavaMailSender
-     */
-    private void sendEmail(String to, String subject, String body) {
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromEmail);
-            message.setTo(to);
-            message.setSubject(subject);
-            message.setText(body);
-
-            mailSender.send(message);
-            LOG.debug("Email sent successfully to: {}", to);
-        } catch (Exception e) {
-            LOG.error("Failed to send email to {}: {}", to, e.getMessage());
-            throw new RuntimeException("Failed to send email", e);
-        }
-    }
-
-    /**
-     * Format Instant to readable date-time string
-     */
-    private String formatDateTime(Instant instant) {
-        if (instant == null) {
-            return "Not specified";
-        }
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm").withZone(ZoneId.systemDefault());
-        return formatter.format(instant);
+        return bookingRequestMapper.toDto(saved);
     }
 
     /**

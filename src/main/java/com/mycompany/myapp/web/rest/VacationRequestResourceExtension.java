@@ -125,6 +125,26 @@ public class VacationRequestResourceExtension {
             throw new BadRequestAlertException("A new vacationRequest cannot already have an ID", "vacationRequest", "idexists");
         }
         VacationRequestDTO result = vacationRequestServiceExtension.save(dto);
-        return ResponseEntity.created(new URI("/api/vacation-requests/" + result.getId())).body(result);
+        return ResponseEntity.created(new URI("/api/v1/vacation-requests/" + result.getId())).body(result);
+    }
+
+    /**
+     * {@code PUT /} : update an existing vacationRequest.
+     *
+     * @param vacationRequestDTO the vacationRequestDTO to update.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated vacationRequestDTO, or with status {@code 400 (Bad Request)} if the vacationRequestDTO is not valid, or with status {@code 500 (Internal Server Error)} if the vacationRequestDTO couldn't be updated.
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<VacationRequestDTO> updateVacationRequest(@PathVariable Long id, @Valid @RequestBody VacationRequestDTO dto) {
+        if (!Objects.equals(id, dto.getId())) {
+            throw new BadRequestAlertException("Invalid ID", "vacationRequest", "idinvalid");
+        }
+
+        if (!vacationRequestRepository.existsById(id)) {
+            throw new BadRequestAlertException("Entity not found", "vacationRequest", "idnotfound");
+        }
+
+        VacationRequestDTO result = vacationRequestServiceExtension.update(dto);
+        return ResponseEntity.ok().body(result);
     }
 }

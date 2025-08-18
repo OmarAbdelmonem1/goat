@@ -31,6 +31,9 @@ public interface BookingRequestRepository
         return this.fetchBagRelationships(this.findAll(pageable));
     }
 
+    @Query("SELECT b FROM BookingRequest b JOIN b.invitedUsers u WHERE u.id = :employeeId")
+    List<BookingRequest> findAllByInvitedUser(@Param("employeeId") Long employeeId);
+
     @Query(
         "SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END " +
         "FROM BookingRequest b " +

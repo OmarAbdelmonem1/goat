@@ -1,11 +1,14 @@
 package com.mycompany.myapp.service;
 
+import com.mycompany.myapp.domain.BookingRequest;
 import com.mycompany.myapp.domain.Employee;
+import com.mycompany.myapp.repository.BookingRequestRepository;
 import com.mycompany.myapp.repository.EmployeeRepository;
 import com.mycompany.myapp.repository.MeetingRoomRepository;
 import com.mycompany.myapp.security.SecurityUtils;
 import com.mycompany.myapp.service.criteria.BookingRequestCriteria;
 import com.mycompany.myapp.service.dto.BookingRequestDTO;
+import com.mycompany.myapp.service.mapper.BookingRequestMapper;
 import com.mycompany.myapp.service.mapper.MeetingRoomMapper;
 import com.mycompany.myapp.web.rest.MeetingRoomResource;
 import com.mycompany.myapp.web.rest.errors.BadRequestAlertException;
@@ -34,10 +37,19 @@ public class BookingRequestServiceExtension {
 
     private final BookingRequestQueryService bookingRequestQueryService;
     private final EmployeeRepository employeeRepository;
+    private final BookingRequestMapper bookingRequestMapper;
+    private final BookingRequestRepository bookingRequestRepository;
 
-    public BookingRequestServiceExtension(BookingRequestQueryService bookingRequestQueryService, EmployeeRepository employeeRepository) {
+    public BookingRequestServiceExtension(
+        BookingRequestQueryService bookingRequestQueryService,
+        EmployeeRepository employeeRepository,
+        BookingRequestMapper bookingRequestMapper,
+        BookingRequestRepository bookingRequestRepository
+    ) {
         this.bookingRequestQueryService = bookingRequestQueryService;
         this.employeeRepository = employeeRepository;
+        this.bookingRequestMapper = bookingRequestMapper;
+        this.bookingRequestRepository = bookingRequestRepository;
     }
 
     public Page<BookingRequestDTO> findMyBookingRequests(Pageable pageable) {
@@ -56,5 +68,14 @@ public class BookingRequestServiceExtension {
         criteria.setEmployeeId(employeeIdFilter);
 
         return bookingRequestQueryService.findByCriteria(criteria, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookingRequestDTO> getInvitationsForCurrentUser() {
+        Long userId = SecurityUtils.getCurrentUserId()
+            .orElseThrow(() -> new BadRequestAlertException("Current user ID not found", "bookingRequest", "usernotfound"));
+
+        List<BookingRequest> bookings = bookingRequestRepository.findAllByInvitedUser(userId);
+        return bookings.stream().map(bookingRequestMapper::toDto).toList();
     }
 }

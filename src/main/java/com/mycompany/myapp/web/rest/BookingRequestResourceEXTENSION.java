@@ -45,4 +45,10 @@ public class BookingRequestResourceEXTENSION extends BookingRequestResource {
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
+
+    @GetMapping("/my-invitations")
+    public ResponseEntity<List<BookingRequestDTO>> getMyInvitations() {
+        List<BookingRequestDTO> invitations = bookingRequestServiceExtension.getInvitationsForCurrentUser();
+        return ResponseEntity.ok(invitations);
+    }
 }

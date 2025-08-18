@@ -137,6 +137,19 @@ const Header = (props: IHeaderProps) => {
             <AdminMenu showOpenAPI={isOpenAPIEnabled} />
           </div>
         )}
+        {/* Invitations */}
+        <NavItem className="mx-1">
+          <NavLink
+            tag={RouterLink}
+            to="/my-invitations"
+            className={`nav-link-enhanced d-flex align-items-center px-3 py-2 rounded-pill ${
+              isActiveRoute('/my-invitations') ? 'active-nav' : ''
+            }`}
+          >
+            <FontAwesomeIcon icon="envelope" className="me-2 text-primary" />
+            <span className="nav-text">Invitations</span>
+          </NavLink>
+        </NavItem>
 
         {/* Account Menu */}
         <div className="account-menu-wrapper">
