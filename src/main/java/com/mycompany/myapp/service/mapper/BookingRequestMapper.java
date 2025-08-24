@@ -15,26 +15,32 @@ import org.mapstruct.*;
  */
 @Mapper(componentModel = "spring")
 public interface BookingRequestMapper extends EntityMapper<BookingRequestDTO, BookingRequest> {
-    @Mapping(target = "invitedUsers", source = "invitedUsers", qualifiedByName = "employeeIdSet")
-    @Mapping(target = "employee", source = "employee", qualifiedByName = "employeeId")
-    @Mapping(target = "meetingRoom", source = "meetingRoom", qualifiedByName = "meetingRoomId")
+    @Mapping(target = "invitedUsers", source = "invitedUsers", qualifiedByName = "employeeBasicSet")
+    @Mapping(target = "employee", source = "employee", qualifiedByName = "employeeBasic")
+    @Mapping(target = "meetingRoom", source = "meetingRoom", qualifiedByName = "meetingRoomBasic")
     BookingRequestDTO toDto(BookingRequest s);
 
     @Mapping(target = "removeInvitedUsers", ignore = true)
     BookingRequest toEntity(BookingRequestDTO bookingRequestDTO);
 
-    @Named("employeeId")
+    // --- Employee mapping with id + name ---
+    @Named("employeeBasic")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
-    EmployeeDTO toDtoEmployeeId(Employee employee);
+    @Mapping(target = "name", source = "name")
+    EmployeeDTO toDtoEmployeeBasic(Employee employee);
 
-    @Named("employeeIdSet")
-    default Set<EmployeeDTO> toDtoEmployeeIdSet(Set<Employee> employee) {
-        return employee.stream().map(this::toDtoEmployeeId).collect(Collectors.toSet());
+    @Named("employeeBasicSet")
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "name", source = "name")
+    default Set<EmployeeDTO> toDtoEmployeeBasicSet(Set<Employee> employees) {
+        return employees.stream().map(this::toDtoEmployeeBasic).collect(Collectors.toSet());
     }
 
-    @Named("meetingRoomId")
+    // --- MeetingRoom mapping with id + name ---
+    @Named("meetingRoomBasic")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
-    MeetingRoomDTO toDtoMeetingRoomId(MeetingRoom meetingRoom);
+    @Mapping(target = "name", source = "name")
+    MeetingRoomDTO toDtoMeetingRoomBasic(MeetingRoom meetingRoom);
 }

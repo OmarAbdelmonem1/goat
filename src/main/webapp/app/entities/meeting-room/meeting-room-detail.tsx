@@ -44,7 +44,7 @@ export const MeetingRoomDetail = () => {
             {meetingRoomEntity.equipment
               ? meetingRoomEntity.equipment.map((val, i) => (
                   <span key={val.id}>
-                    <a>{val.id}</a>
+                    <a>{val.name}</a>
                     {meetingRoomEntity.equipment && i === meetingRoomEntity.equipment.length - 1 ? '' : ', '}
                   </span>
                 ))

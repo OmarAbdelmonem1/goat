@@ -32,7 +32,7 @@ const EmployeeRoutes = () => (
       <Route
         index
         element={
-          <PrivateRoute hasAnyAuthorities={[AUTHORITIES.ADMIN]}>
+          <PrivateRoute hasAnyAuthorities={[AUTHORITIES.ADMIN, AUTHORITIES.USER]}>
             <EmployeeDetail />
           </PrivateRoute>
         }

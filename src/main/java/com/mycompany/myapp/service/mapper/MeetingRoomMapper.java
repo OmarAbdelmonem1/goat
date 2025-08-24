@@ -13,19 +13,21 @@ import org.mapstruct.*;
  */
 @Mapper(componentModel = "spring")
 public interface MeetingRoomMapper extends EntityMapper<MeetingRoomDTO, MeetingRoom> {
-    @Mapping(target = "equipment", source = "equipment", qualifiedByName = "equipmentIdSet")
+    @Mapping(target = "equipment", source = "equipment", qualifiedByName = "equipmentBasicSet")
     MeetingRoomDTO toDto(MeetingRoom s);
 
     @Mapping(target = "removeEquipment", ignore = true)
     MeetingRoom toEntity(MeetingRoomDTO meetingRoomDTO);
 
-    @Named("equipmentId")
+    // --- Equipment mapping with id + name ---
+    @Named("equipmentBasic")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
-    EquipmentDTO toDtoEquipmentId(Equipment equipment);
+    @Mapping(target = "name", source = "name")
+    EquipmentDTO toDtoEquipmentBasic(Equipment equipment);
 
-    @Named("equipmentIdSet")
-    default Set<EquipmentDTO> toDtoEquipmentIdSet(Set<Equipment> equipment) {
-        return equipment.stream().map(this::toDtoEquipmentId).collect(Collectors.toSet());
+    @Named("equipmentBasicSet")
+    default Set<EquipmentDTO> toDtoEquipmentBasicSet(Set<Equipment> equipment) {
+        return equipment.stream().map(this::toDtoEquipmentBasic).collect(Collectors.toSet());
     }
 }

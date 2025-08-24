@@ -18,7 +18,6 @@ const apiUrl = 'api/v1/booking-requests';
 
 // Actions
 
-// ✅ Fixed Actions
 export const getEntities = createAsyncThunk(
   'bookingRequest/fetch_entity_list',
   async ({ page, size, sort }: IQueryParams) => {
@@ -28,14 +27,13 @@ export const getEntities = createAsyncThunk(
   { serializeError: serializeAxiosError },
 );
 
-// ✅ Fixed getMyEntities - Added serializeError
 export const getMyEntities = createAsyncThunk(
   'bookingRequest/fetch_my_entity_list',
   async ({ page, size, sort }: IQueryParams = {}) => {
     const requestUrl = `${apiUrl}/my?page=${page}&size=${size}&sort=${sort}&cacheBuster=${new Date().getTime()}`;
     return axios.get<IBookingRequest[]>(requestUrl);
   },
-  { serializeError: serializeAxiosError }, // ⚠️ Was missing
+  { serializeError: serializeAxiosError },
 );
 
 export const getEntity = createAsyncThunk(

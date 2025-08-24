@@ -49,8 +49,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: osrapathfinderegypt@gmail.com
-    password: qbgqbbzhhqwsqiau
+    username: os606030@gmail.com
+    password: snfeqziwtpcdaioe
     properties:
       mail:
         smtp:
@@ -64,6 +64,7 @@ spring:
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
+
   messages:
     cache-duration: PT1S # 1 second, see the ISO 8601 standard
   thymeleaf:

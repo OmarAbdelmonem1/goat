@@ -15,7 +15,7 @@ import PrivateRoute from 'app/shared/auth/private-route';
 import ErrorBoundaryRoutes from 'app/shared/error/error-boundary-routes';
 import PageNotFound from 'app/shared/error/page-not-found';
 import { AUTHORITIES } from 'app/config/constants';
-import MyInvitations from 'app/entities/booking-request/MyInvitations';
+import MyInvitations from 'app/entities/invitations/MyInvitations';
 
 const loading = <div>loading ...</div>;
 
@@ -28,6 +28,7 @@ const Admin = Loadable({
   loader: () => import(/* webpackChunkName: "administration" */ 'app/modules/administration'),
   loading: () => loading,
 });
+
 const AppRoutes = () => {
   return (
     <div className="view-routes">
@@ -50,15 +51,8 @@ const AppRoutes = () => {
             <Route path="request" element={<PasswordResetInit />} />
             <Route path="finish" element={<PasswordResetFinish />} />
           </Route>
-          <Route
-            path="my-invitations"
-            element={
-              <PrivateRoute hasAnyAuthorities={[AUTHORITIES.USER, AUTHORITIES.ADMIN]}>
-                <MyInvitations />
-              </PrivateRoute>
-            }
-          />
         </Route>
+
         <Route
           path="admin/*"
           element={

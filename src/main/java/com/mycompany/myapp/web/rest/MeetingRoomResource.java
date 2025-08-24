@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import tech.jhipster.web.util.HeaderUtil;
@@ -31,6 +32,7 @@ import tech.jhipster.web.util.ResponseUtil;
  */
 @RestController
 @RequestMapping("/api/meeting-rooms")
+@PreAuthorize("hasAnyRole('ADMIN')")
 public class MeetingRoomResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(MeetingRoomResource.class);
@@ -151,6 +153,7 @@ public class MeetingRoomResource {
      * @param criteria the criteria which the requested entities should match.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of meetingRooms in body.
      */
+    @PreAuthorize("hasAnyRole('ADMIN','USER')")
     @GetMapping("")
     public ResponseEntity<List<MeetingRoomDTO>> getAllMeetingRooms(
         MeetingRoomCriteria criteria,
@@ -181,6 +184,7 @@ public class MeetingRoomResource {
      * @param id the id of the meetingRoomDTO to retrieve.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the meetingRoomDTO, or with status {@code 404 (Not Found)}.
      */
+    @PreAuthorize("hasAnyRole('ADMIN','USER')")
     @GetMapping("/{id}")
     public ResponseEntity<MeetingRoomDTO> getMeetingRoom(@PathVariable("id") Long id) {
         LOG.debug("REST request to get MeetingRoom : {}", id);

@@ -13,14 +13,15 @@ import org.mapstruct.*;
 
 @Mapper(componentModel = "spring")
 public interface VacationRequestMapper extends EntityMapper<VacationRequestDTO, VacationRequest> {
-    @Mapping(target = "employee", source = "employee", qualifiedByName = "employeeId")
+    @Mapping(target = "employee", source = "employee", qualifiedByName = "employeeIdAndName")
     @Mapping(target = "attachments", qualifiedByName = "attachmentsWithoutVacationRequest")
     VacationRequestDTO toDto(VacationRequest vacationRequest);
 
-    @Named("employeeId")
+    @Named("employeeIdAndName")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
-    EmployeeDTO toDtoEmployeeId(Employee employee);
+    @Mapping(target = "name", source = "name")
+    EmployeeDTO toDtoEmployeeIdAndName(Employee employee);
 
     @Named("attachmentsWithoutVacationRequest")
     default List<AttachmentDTO> attachmentsWithoutVacationRequest(Set<Attachment> attachments) {
@@ -37,7 +38,7 @@ public interface VacationRequestMapper extends EntityMapper<VacationRequestDTO, 
         dto.setFileSize(attachment.getFileSize());
         dto.setContentType(attachment.getContentType());
         dto.setUploadedAt(attachment.getUploadedAt());
-        // Important: do NOT set dto.setVacationRequest(attachment.getVacationRequest())
+        // Important: do NOT set vacationRequest
         return dto;
     }
 }

@@ -9,6 +9,7 @@ import Equipment from './equipment';
 import BookingRequest from './booking-request';
 import VacationRequest from './vacation-request';
 import Attachment from './attachment';
+import MyInvitations from './invitations/MyInvitations';
 /* jhipster-needle-add-route-import - JHipster will add routes here */
 
 export default () => {
@@ -22,6 +23,7 @@ export default () => {
         <Route path="booking-request/*" element={<BookingRequest />} />
         <Route path="vacation-request/*" element={<VacationRequest />} />
         <Route path="attachment/*" element={<Attachment />} />
+        <Route path="my-invitations" element={<MyInvitations />} />
         {/* jhipster-needle-add-route-path - JHipster will add routes here */}
       </ErrorBoundaryRoutes>
     </div>

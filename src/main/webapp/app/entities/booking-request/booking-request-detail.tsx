@@ -71,16 +71,30 @@ export const BookingRequestDetail = () => {
             {bookingRequestEntity.invitedUsers
               ? bookingRequestEntity.invitedUsers.map((val, i) => (
                   <span key={val.id}>
-                    <a>{val.id}</a>
-                    {bookingRequestEntity.invitedUsers && i === bookingRequestEntity.invitedUsers.length - 1 ? '' : ', '}
+                    <a>{val.name}</a>
+                    {i === bookingRequestEntity.invitedUsers.length - 1 ? '' : ', '}
                   </span>
                 ))
               : null}
           </dd>
+
           <dt>Employee</dt>
-          <dd>{bookingRequestEntity.employee ? bookingRequestEntity.employee.id : ''}</dd>
+          <dd>
+            {bookingRequestEntity.employee ? (
+              <span>
+                <a>{bookingRequestEntity.employee.name}</a>
+              </span>
+            ) : null}
+          </dd>
+
           <dt>Meeting Room</dt>
-          <dd>{bookingRequestEntity.meetingRoom ? bookingRequestEntity.meetingRoom.id : ''}</dd>
+          <dd>
+            {bookingRequestEntity.meetingRoom ? (
+              <span>
+                <a>{bookingRequestEntity.meetingRoom.name}</a>
+              </span>
+            ) : null}
+          </dd>
         </dl>
         <Button tag={Link} to="/booking-request" replace color="info" data-cy="entityDetailsBackButton">
           <FontAwesomeIcon icon="arrow-left" /> <span className="d-none d-md-inline">Back</span>

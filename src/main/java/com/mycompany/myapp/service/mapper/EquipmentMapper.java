@@ -23,6 +23,7 @@ public interface EquipmentMapper extends EntityMapper<EquipmentDTO, Equipment> {
     @Named("meetingRoomId")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
+    @Mapping(target = "name", source = "name")
     MeetingRoomDTO toDtoMeetingRoomId(MeetingRoom meetingRoom);
 
     @Named("meetingRoomIdSet")

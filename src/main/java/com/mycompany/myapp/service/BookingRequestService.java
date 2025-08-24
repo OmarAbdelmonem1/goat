@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import org.checkerframework.checker.units.qual.t;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,7 +53,7 @@ public class BookingRequestService {
     private final EmployeeRepository employeeRepository;
     private final EmployeeMapper employeeMapper;
     private final MeetingRoomRepository meetingRoomRepository;
-    private final JavaMailSender mailSender;
+    private final MailService mailService;
 
     public BookingRequestService(
         BookingRequestRepository bookingRequestRepository,
@@ -60,14 +61,14 @@ public class BookingRequestService {
         EmployeeRepository employeeRepository,
         EmployeeMapper employeeMapper,
         MeetingRoomRepository meetingRoomRepository,
-        JavaMailSender mailSender
+        MailService mailService
     ) {
         this.bookingRequestRepository = bookingRequestRepository;
         this.bookingRequestMapper = bookingRequestMapper;
         this.employeeRepository = employeeRepository;
         this.employeeMapper = employeeMapper;
         this.meetingRoomRepository = meetingRoomRepository;
-        this.mailSender = mailSender;
+        this.mailService = mailService;
     }
 
     /**
@@ -111,7 +112,7 @@ public class BookingRequestService {
         );
 
         if (hasOverlap) {
-            throw new BadRequestAlertException("Time slot overlaps with another booking", "bookingRequest", "timeoverlap");
+            throw new BadRequestAlertException("error.timeoverlap", "bookingRequest", "timeoverlap");
         }
 
         // Set status based on requiresApproval
@@ -124,18 +125,17 @@ public class BookingRequestService {
         // Save booking request
         BookingRequest entity = bookingRequestMapper.toEntity(bookingRequestDTO);
         entity = bookingRequestRepository.save(entity);
-
-        // Send confirmation email for auto-approved bookings or pending requests
-        // try {
-        //     if (entity.getStatus() == Status.APPROVED) {
-        //         sendBookingConfirmationEmail(entity);
-        //     } else if (entity.getStatus() == Status.PENDING) {
-        //         sendPendingBookingEmail(entity);
-        //     }
-        // } catch (Exception e) {
-        //     LOG.error("Failed to send confirmation email for booking {}: {}", entity.getId(), e.getMessage());
-        //     // Don't throw exception as booking was successful, just log the email error
-        // }
+        //Send confirmation email for auto-approved bookings or pending requests
+        try {
+            if (entity.getStatus() == Status.APPROVED) {
+                sendNotificationEmails(entity, true);
+            } else if (entity.getStatus() == Status.PENDING) {
+                sendNotificationEmails(entity, false);
+            }
+        } catch (Exception e) {
+            LOG.error("Failed to send confirmation email for booking {}: {}", entity.getId(), e.getMessage());
+            // Don't throw exception as booking was successful, just log the email error
+        }
 
         return bookingRequestMapper.toDto(entity);
     }
@@ -155,6 +155,13 @@ public class BookingRequestService {
             .findById(bookingRequestDTO.getId())
             .orElseThrow(() -> new BadRequestAlertException("Booking not found", "bookingRequest", "idnotfound"));
 
+        // 🔹 Update fields from DTO
+        existing.setStartTime(bookingRequestDTO.getStartTime());
+        existing.setEndTime(bookingRequestDTO.getEndTime());
+        existing.setPurpose(bookingRequestDTO.getPurpose());
+        existing.setStatus(bookingRequestDTO.getStatus());
+        existing.setUpdatedAt(bookingRequestDTO.getUpdatedAt());
+
         // Link employee from DTO if present
         if (bookingRequestDTO.getEmployee() != null && bookingRequestDTO.getEmployee().getId() != null) {
             Employee employee = employeeRepository
@@ -163,10 +170,46 @@ public class BookingRequestService {
             existing.setEmployee(employee);
         }
 
+        // Link meeting room if present
+        if (bookingRequestDTO.getMeetingRoom() != null && bookingRequestDTO.getMeetingRoom().getId() != null) {
+            MeetingRoom room = meetingRoomRepository
+                .findById(bookingRequestDTO.getMeetingRoom().getId())
+                .orElseThrow(() -> new BadRequestAlertException("Meeting room not found", "bookingRequest", "roomnotfound"));
+            existing.setMeetingRoom(room);
+        }
+
         // Save entity
         BookingRequest saved = bookingRequestRepository.save(existing);
 
+        // 🔹 Send email if status changed
+        if (saved.getStatus() == Status.APPROVED) {
+            sendNotificationEmails(saved, true);
+        } else if (saved.getStatus() == Status.REJECTED) {
+            sendNotificationEmails(saved, false);
+        }
+
         return bookingRequestMapper.toDto(saved);
+    }
+
+    private void sendNotificationEmails(BookingRequest request, boolean approved) {
+        String subject = approved ? "Booking Approved ✅" : "Booking Rejected ❌";
+        String message = approved ? "Your booking request has been approved." : "Your booking request has been rejected.";
+
+        // Send to employee
+        if (request.getEmployee() != null && request.getEmployee().getEmail() != null) {
+            mailService.sendEmail(request.getEmployee().getEmail(), subject, message, false, false);
+        }
+
+        // Send to invited users (if you have them mapped in entity)
+        if (request.getInvitedUsers() != null) {
+            request
+                .getInvitedUsers()
+                .forEach(user -> {
+                    if (user.getEmail() != null) {
+                        mailService.sendEmail(user.getEmail(), subject, message, false, false);
+                    }
+                });
+        }
     }
 
     /**

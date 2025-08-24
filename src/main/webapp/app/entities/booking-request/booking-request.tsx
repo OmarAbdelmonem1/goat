@@ -198,14 +198,14 @@ export const BookingRequest = () => {
                   <td>{bookingRequest.purpose}</td>
                   <td>
                     {bookingRequest.employee ? (
-                      <Link to={`/employee/${bookingRequest.employee.id}`}>{bookingRequest.employee.id}</Link>
+                      <Link to={`/employee/${bookingRequest.employee.id}`}>{bookingRequest.employee.name}</Link>
                     ) : (
                       ''
                     )}
                   </td>
                   <td>
                     {bookingRequest.meetingRoom ? (
-                      <Link to={`/meeting-room/${bookingRequest.meetingRoom.id}`}>{bookingRequest.meetingRoom.id}</Link>
+                      <Link to={`/meeting-room/${bookingRequest.meetingRoom.id}`}>{bookingRequest.meetingRoom.name}</Link>
                     ) : (
                       ''
                     )}

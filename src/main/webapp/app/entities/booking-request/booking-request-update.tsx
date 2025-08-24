@@ -77,6 +77,49 @@ export const BookingRequestUpdate = () => {
     }
   };
 
+  // Get invitable employees (exclude current user)
+  const getInvitableEmployees = () => {
+    if (!employees || !currentUser?.login) {
+      return [];
+    }
+
+    // Debug logging
+    console.warn('Current user:', currentUser);
+    console.warn('All employees:', employees);
+
+    return employees.filter(emp => {
+      // Multiple ways to check and exclude current user
+      const empLogin = emp.user?.login;
+      const empName = emp.name;
+      const currentLogin = currentUser.login;
+      const currentName = currentUser.firstName || currentUser.lastName;
+
+      // Debug each employee
+      console.warn(`Checking employee: ${empName} (login: ${empLogin}) against current user: ${currentLogin}`);
+
+      // Exclude if login matches
+      if (empLogin && empLogin === currentLogin) {
+        console.warn(`Excluding ${empName} - login match`);
+        return false;
+      }
+
+      // Exclude if name matches current user
+      if (empName && currentName && empName.toLowerCase() === currentName.toLowerCase()) {
+        console.warn(`Excluding ${empName} - name match with current user name`);
+        return false;
+      }
+
+      // Exclude if employee name matches current user login
+      if (empName && empName.toLowerCase() === currentLogin?.toLowerCase()) {
+        console.warn(`Excluding ${empName} - name matches current user login`);
+        return false;
+      }
+
+      console.warn(`Including ${empName} in invite list`);
+      return true;
+    });
+  };
+
   const defaultValues = () =>
     isNew
       ? {
@@ -90,6 +133,8 @@ export const BookingRequestUpdate = () => {
           invitedUsers: bookingRequestEntity?.invitedUsers?.map(e => e.id.toString()),
           meetingRoom: bookingRequestEntity?.meetingRoom?.id,
         };
+
+  const invitableEmployees = getInvitableEmployees();
 
   return (
     <div>
@@ -150,15 +195,18 @@ export const BookingRequestUpdate = () => {
                 name="invitedUsers"
               >
                 <option value="" key="0" />
-                {employees
-                  ? employees.map(otherEntity => (
-                      <option value={otherEntity.id} key={otherEntity.id}>
-                        {otherEntity.id}
-                        {otherEntity.name ? ` - ${otherEntity.name}` : ''}
-                      </option>
-                    ))
-                  : null}
+                {invitableEmployees.length > 0 ? (
+                  invitableEmployees.map(otherEntity => (
+                    <option value={otherEntity.id} key={otherEntity.id}>
+                      {otherEntity.name || `Employee ${otherEntity.id}`}
+                      {otherEntity.user?.login && ` (${otherEntity.user.login})`}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No other employees available to invite</option>
+                )}
               </ValidatedField>
+              <FormText color="muted">Select employees to invite to this meeting. You cannot invite yourself.</FormText>
               <ValidatedField
                 id="booking-request-meetingRoom"
                 name="meetingRoom"

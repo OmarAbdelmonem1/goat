@@ -10,11 +10,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import tech.jhipster.web.util.HeaderUtil;
 
 @RestController
 @RequestMapping("/api/v1/employees")
+@PreAuthorize("hasAnyRole('ADMIN')")
 public class EmployeeResourceExtension {
 
     private static final Logger LOG = LoggerFactory.getLogger(EmployeeResourceExtension.class);
@@ -37,6 +39,7 @@ public class EmployeeResourceExtension {
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new employeeDTO.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
+
     @PostMapping("")
     public ResponseEntity<EmployeeDTO> createEmployee(@Valid @RequestBody EmployeeDTO employeeDTO) throws URISyntaxException {
         LOG.debug("REST request to save Employee (v1) : {}", employeeDTO);

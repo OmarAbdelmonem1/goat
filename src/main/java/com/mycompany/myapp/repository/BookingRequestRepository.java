@@ -31,7 +31,15 @@ public interface BookingRequestRepository
         return this.fetchBagRelationships(this.findAll(pageable));
     }
 
-    @Query("SELECT b FROM BookingRequest b JOIN b.invitedUsers u WHERE u.id = :employeeId")
+    @Query(
+        """
+            SELECT b FROM BookingRequest b
+            JOIN b.invitedUsers u
+            LEFT JOIN FETCH b.employee
+            LEFT JOIN FETCH b.meetingRoom
+            WHERE u.id = :employeeId
+        """
+    )
     List<BookingRequest> findAllByInvitedUser(@Param("employeeId") Long employeeId);
 
     @Query(
